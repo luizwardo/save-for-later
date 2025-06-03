@@ -1,33 +1,59 @@
 body {
-    width: 550px;
-    min-height: 200px;
+    width: 380px;
+    max-height: 180px;
     margin: 0;
-    padding: 24px;
+    padding: 16px;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: #2a2a2a;
     color: #a3a3a3;
     border: none;
     box-sizing: border-box;
-    border-radius: 16px; /* This will round the entire popup */
+    border-radius: 16px;
     overflow: hidden;
 }
 
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
 h3 {
-    margin: 0 0 32px 0;
-    text-align: center;
-    font-size: 16px;
+    margin: 0;
+    font-size: 14px;
     font-weight: 400;
     color: #9e9e9e;
     text-transform: uppercase;
     letter-spacing: 2px;
 }
 
+#manage {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid #404040;
+    border-radius: 8px;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#manage:before {
+    content: "";
+    width: 20px;
+    height: 20px;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23e0e0e0"><path d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"/></svg>') no-repeat center;
+}
+
 .section {
-    margin-bottom: 24px;
+    margin-bottom: 20px;
 }
 
 .section-title {
-    font-size: 12px;
+    font-size: 10px;
     color: #757575;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -35,27 +61,25 @@ h3 {
     font-weight: 500;
 }
 
-/* Input group styling */
-.input-group {
-    margin-bottom: 16px;
+.inputs-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
 }
 
-.input-group label {
-    display: block;
-    font-size: 12px;
-    color: #757575;
-    margin-bottom: 6px;
-    font-weight: 500;
+.input-group {
+    margin-bottom: 0;
 }
 
 .input-group input {
     width: 100%;
     padding: 12px 16px;
     border: 1px solid #404040;
-    border-radius: 8px;
+    border-radius: 12px;
     background: transparent;
     color: #e0e0e0;
-    font-size: 14px;
+    font-size: 12px;
     font-family: inherit;
     transition: all 0.2s ease;
     box-sizing: border-box;
@@ -73,18 +97,17 @@ h3 {
 
 button {
     width: 100%;
-    padding: 16px 20px;
-    margin-bottom: 8px;
+    padding: 12px 16px;
+    margin-bottom: 6px;
     border: 1px solid #404040;
     border-radius: 12px;
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 400;
     cursor: pointer;
     transition: all 0.2s ease;
     background: transparent;
     color: #e0e0e0;
-    text-align: left;
-    position: relative;
+    text-align: center;
 }
 
 button:hover {
@@ -96,63 +119,8 @@ button:active {
     background: #404040;
 }
 
-#save {
-    border-color: #404040;
-    text-overflow: ellipsis;
-    overflow: hidden;
-    white-space: nowrap;
-    text-align: center;
-}
-
-#manage {
-    border-color: #404040;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* Ícones com estilo minimalista */
-#save:before {
-    content: "";
-    display: inline-block;
-    width: 16px;
-    height: 16px;
-    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23e0e0e0"><path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5Z"/></svg>') no-repeat center;
-    margin-right: 12px;
-}
-
-#manage:before {
-    content: "";
-    display: inline-block;
-    width: 20px;
-    height: 20px;
-    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23e0e0e0"><path d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"/></svg>') no-repeat center;
-}
-
-/* Layout em duas colunas para os botões de ação */
-.action-buttons {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin-top: 16px;
-}
-
-.action-btn {
-    width: auto;
-    height: 48px;
-    border-radius: 8px;
-    margin-bottom: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-}
-
-.action-btn:before {
-    content: "";
-    width: 20px;
-    height: 20px;
-    margin: 0;
+#fake-date-input {
+    cursor: pointer;
 }
 
 /* Animação suave */

@@ -3,28 +3,47 @@
 <head>
     <title>Save for Later</title>
     <link rel="stylesheet" type="text/css" href="popup.css">
+    <style>
+        #url-input, #title-input {
+            color: #ACE6FF !important;
+        }
+    </style>
 </head>
 <body>
   <header>
     <h3>Save for Later</h3>
+    <button id="manage" class="action-btn"></button>
   </header>
 
     <div class="section">
         <div class="section-title">Saving</div>
-        <div class="input-group">
-            <input type="url" id="url-input" placeholder="URL">
+        <div class="inputs-grid">
+            <div class="input-group">
+                <input type="url" id="url-input" placeholder="URL">
+            </div>
+            <div class="input-group">
+                <input type="text" id="title-input" placeholder="Custom Title (optional)">
+            </div>
         </div>
-        <div class="input-group">
-            <input type="text" id="title-input" placeholder="Custom Title (optional)">
-        </div>
-        <button id="save">Save for Later</button>
+        <button id="save">Save</button>
     </div>
     
     <div class="section">
         <div class="section-title">For Later</div>
+        <div class="inputs-grid">
+            <div class="input-group">
+                <div class="date-input-container">
+                    <input type="date" id="reminder-date">
+                </div>
+            </div>
+            <div class="input-group">
+                <div class="time-input-container">
+                    <input type="time" id="reminder-time" placeholder="Reminder Time">
+                </div>
+            </div>
+        </div>
+        <button id="set-reminder">Save For Later</button>
         <div class="action-buttons">
-            <button id="manage" class="action-btn">Manage</button>
-            <button id="history" class="action-btn">History</button>
         </div>
     </div>
     

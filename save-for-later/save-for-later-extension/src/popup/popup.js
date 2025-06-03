@@ -45,7 +45,34 @@ document.getElementById('save').addEventListener('click', function() {
     }
 });
 
-function saveLink(url, title, customTitle) {
+document.getElementById('set-reminder').addEventListener('click', function() {
+    const reminderDate = document.getElementById('reminder-date').value;
+    const reminderTime = document.getElementById('reminder-time').value;
+    const urlInput = document.getElementById('url-input').value.trim();
+    const customTitle = document.getElementById('title-input').value.trim();
+    
+    if (!reminderDate) {
+        alert('Please select a reminder date');
+        return;
+    }
+    
+    if (!urlInput) {
+        alert('Please enter a URL to save with reminder');
+        return;
+    }
+    
+    // Get current tab info if no URL provided
+    chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+        const currentTab = tabs[0];
+        const url = urlInput || currentTab.url;
+        const title = customTitle || currentTab.title;
+        
+        // Save link with reminder
+        saveLink(url, title, customTitle, reminderDate, reminderTime);
+    });
+});
+
+function saveLink(url, title, customTitle, reminderDate = null, reminderTime = null) {
     chrome.storage.sync.get({ savedLinks: [] }, function(data) {
         const savedLinks = data.savedLinks;
         
@@ -56,25 +83,66 @@ function saveLink(url, title, customTitle) {
             url: url, 
             title: title,
             customTitle: customTitle || null,
-            dateAdded: new Date().toISOString()
+            dateAdded: new Date().toISOString(),
+            reminderDate: reminderDate,
+            reminderTime: reminderTime
         };
         
+        let linkIndex;
         if (existingIndex !== -1) {
             // Update existing link
             savedLinks[existingIndex] = linkData;
+            linkIndex = existingIndex;
             alert('Link updated!');
         } else {
             // Add new link
             savedLinks.push(linkData);
+            linkIndex = savedLinks.length - 1;
             alert('Link saved!');
         }
         
         chrome.storage.sync.set({ savedLinks: savedLinks }, function() {
+            // Set reminder alarm if date/time provided
+            if (reminderDate) {
+                setReminderAlarm(linkIndex, reminderDate, reminderTime);
+            }
+            
             // Clear inputs after saving
             document.getElementById('url-input').value = '';
             document.getElementById('title-input').value = '';
+            document.getElementById('reminder-date').value = '';
+            document.getElementById('reminder-time').value = '';
         });
     });
+}
+
+function setReminderAlarm(linkIndex, reminderDate, reminderTime) {
+    const reminderDateTime = new Date(reminderDate);
+    
+    if (reminderTime) {
+        const [hours, minutes] = reminderTime.split(':');
+        reminderDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+    } else {
+        // Default to 9 AM if no time specified
+        reminderDateTime.setHours(9, 0, 0, 0);
+    }
+    
+    // Only set alarm if the date/time is in the future
+    if (reminderDateTime > new Date()) {
+        const alarmName = `reminder_${linkIndex}`;
+        
+        // Clear any existing alarm for this link
+        chrome.alarms.clear(alarmName);
+        
+        // Create new alarm
+        chrome.alarms.create(alarmName, {
+            when: reminderDateTime.getTime()
+        });
+        
+        console.log(`Reminder set for ${reminderDateTime.toLocaleString()}`);
+    } else {
+        alert('Reminder date/time must be in the future');
+    }
 }
 
 document.getElementById('manage').addEventListener('click', function() {

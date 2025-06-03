@@ -1,4 +1,5 @@
-// This file contains the background script for the extension. It manages events and interactions that occur outside of the popup and manager interfaces, such as listening for tab updates and handling storage.
+// It manages events and interactions that occur outside of the popup and manager interfaces, 
+// such as listening for tab updates and handling storage.
 
 chrome.runtime.onInstalled.addListener(() => {
     chrome.storage.sync.set({ savedLinks: [] }, () => {

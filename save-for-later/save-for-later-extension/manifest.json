@@ -4,8 +4,10 @@
   "version": "1.0",
   "description": "Save links for later viewing.",
   "permissions": [
-    "tabs",
-    "storage"
+    "storage",
+    "activeTab",
+    "notifications",
+    "alarms"
   ],
   "action": {
     "default_popup": "src/popup/popup.html",
