@@ -1,19 +1,22 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Save for Later</title>
     <link rel="stylesheet" type="text/css" href="popup.css">
     <style>
-        #url-input, #title-input {
+        #url-input,
+        #title-input {
             color: #ACE6FF !important;
         }
     </style>
 </head>
+
 <body>
-  <header>
-    <h3>Save for Later</h3>
-    <button id="manage" class="action-btn"></button>
-  </header>
+    <header>
+        <h3>Save for Later</h3>
+        <button id="settings" class="action-btn"></button>
+    </header>
 
     <div class="section">
         <div class="section-title">Saving</div>
@@ -25,16 +28,13 @@
                 <input type="text" id="title-input" placeholder="Custom Title (optional)">
             </div>
         </div>
-        <button id="save">Save</button>
     </div>
-    
+
     <div class="section">
         <div class="section-title">For Later</div>
         <div class="inputs-grid">
             <div class="input-group">
-                <div class="date-input-container">
-                    <input type="date" id="reminder-date">
-                </div>
+                <input type="date" id="reminder-date" placeholder="Reminder Date">
             </div>
             <div class="input-group">
                 <div class="time-input-container">
@@ -42,11 +42,15 @@
                 </div>
             </div>
         </div>
-        <button id="set-reminder">Save For Later</button>
+        <button id="set-reminder">Remind me later</button>
+        <button id="test-notification" style="margin-top: 8px; font-size: 10px; opacity: 0.7;">Test
+            Notification</button>
+        <button id="debug-btn" style="margin-top: 4px; font-size: 10px; opacity: 0.5;">🔧 Debug</button>
         <div class="action-buttons">
         </div>
     </div>
-    
+
     <script src="popup.js"></script>
 </body>
+
 </html>

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Manage Saved Links</title>
+  <link rel="stylesheet" type="text/css" href="settings.css">
+</head>
+
+<body>
+  <div class="container">
+    <header>
+      <h1>Save for Later - Manage Reminders</h1>
+      <button id="back-btn" class="back-btn">← Back to Browser</button>
+    </header>
+
+    <div class="section">
+      <h2>Upcoming Reminders</h2>
+      <div id="upcoming-reminders" class="reminders-list">
+        <div class="loading">Loading reminders...</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Past Reminders</h2>
+      <div id="past-reminders" class="reminders-list">
+        <div class="loading">Loading reminders...</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <button id="clear-all-btn" class="danger-btn">Clear All Reminders</button>
+    </div>
+  </div>
+
+  <script src="settings.js"></script>
+</body>
+
+</html>

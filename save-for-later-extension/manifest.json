@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "Save for Later",
+  "version": "1.0",
+  "description": "Save links for later viewing.",
+  "permissions": ["storage", "activeTab", "notifications", "alarms"],
+  "background": {
+    "service_worker": "src/background.js"
+  },
+  "action": {
+    "default_popup": "src/popup/popup.html",
+    "default_icon": {
+      "16": "src/assets/icon.png",
+      "48": "src/assets/icon.png",
+      "128": "src/assets/icon.png"
+    }
+  }
+}
