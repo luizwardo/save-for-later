@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Save for Later</title>
+    <link rel="stylesheet" type="text/css" href="popup.css">
+</head>
+<body>
+  <header>
+    <h3>Save for Later</h3>
+  </header>
+
+    <div class="section">
+        <div class="section-title">Saving</div>
+        <div class="input-group">
+            <input type="url" id="url-input" placeholder="URL">
+        </div>
+        <div class="input-group">
+            <input type="text" id="title-input" placeholder="Custom Title (optional)">
+        </div>
+        <button id="save">Save for Later</button>
+    </div>
+    
+    <div class="section">
+        <div class="section-title">For Later</div>
+        <div class="action-buttons">
+            <button id="manage" class="action-btn">Manage</button>
+            <button id="history" class="action-btn">History</button>
+        </div>
+    </div>
+    
+    <script src="popup.js"></script>
+</body>
+</html>
