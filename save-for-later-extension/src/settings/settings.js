@@ -7,6 +7,16 @@ document.addEventListener("DOMContentLoaded", async () => {
   const testNotificationBtn = document.getElementById("test-notification-btn");
   const debugInfo = document.getElementById("debug-info");
 
+  // New sidebar elements
+  const navItems = document.querySelectorAll(".nav-item");
+  const contentSections = document.querySelectorAll(".content-section");
+  const addFolderBtn = document.getElementById("add-folder-btn");
+  const addFolderModal = document.getElementById("add-folder-modal");
+  const createFolderBtn = document.getElementById("create-folder-btn");
+  const cancelFolderBtn = document.getElementById("cancel-folder-btn");
+  const newFolderInput = document.getElementById("new-folder-input");
+  const foldersNav = document.getElementById("folders-nav");
+
   // Debug logging function
   function debugLog(message, level = "info") {
     const timestamp = new Date().toLocaleTimeString();
@@ -53,6 +63,391 @@ document.addEventListener("DOMContentLoaded", async () => {
       console.error("Test notification error:", error);
     }
   });
+
+  // Initialize debug info on load
+  async function initDebugInfo() {
+    try {
+      // Check permissions
+      const permissions = await chrome.permissions.getAll();
+      debugLog(
+        `Extension permissions: ${permissions.permissions.join(", ")}`,
+        "info"
+      );
+
+      // Check alarms
+      const alarms = await chrome.alarms.getAll();
+      debugLog(`Active alarms: ${alarms.length}`, "info");
+      alarms.forEach((alarm) => {
+        const triggerTime = new Date(alarm.scheduledTime).toLocaleString();
+        debugLog(`Alarm ${alarm.name}: ${triggerTime}`, "info");
+      });
+
+      // Check storage
+      const storage = await chrome.storage.local.get(["reminders"]);
+      const reminders = storage.reminders || [];
+      debugLog(`Stored reminders: ${reminders.length}`, "info");
+    } catch (error) {
+      debugLog(`Error initializing debug info: ${error.message}`, "error");
+    }
+  }
+
+  // Initialize debug info
+  initDebugInfo();
+
+  // Back button functionality
+  backBtn.addEventListener("click", () => {
+    window.close();
+  });
+
+  // Clear all reminders
+  clearAllBtn.addEventListener("click", async () => {
+    if (
+      confirm(
+        "Are you sure you want to clear all reminders? This action cannot be undone."
+      )
+    ) {
+      try {
+        // Clear all alarms
+        const alarms = await chrome.alarms.getAll();
+        for (const alarm of alarms) {
+          await chrome.alarms.clear(alarm.name);
+        }
+
+        // Clear storage
+        await chrome.storage.local.set({ reminders: [] });
+
+        // Refresh the display
+        await loadReminders();
+
+        showNotification("All reminders cleared successfully", "success");
+      } catch (error) {
+        console.error("Error clearing reminders:", error);
+        showNotification("Failed to clear reminders", "error");
+      }
+    }
+  });
+
+  // Initialize sidebar navigation
+  function initSidebarNavigation() {
+    // Handle static nav items
+    navItems.forEach((item) => {
+      item.addEventListener("click", (e) => {
+        e.preventDefault();
+        const sectionName = item.dataset.section;
+        const folderId = item.dataset.folderId;
+
+        if (folderId) {
+          loadFolderContent(folderId);
+          switchToSection("folder-content", item);
+        } else if (sectionName) {
+          switchToSection(sectionName, item);
+        }
+      });
+    });
+
+    // Handle dynamic folder items
+    if (foldersNav) {
+      foldersNav.addEventListener("click", (e) => {
+        const folderItem = e.target.closest(".folder-item");
+        if (folderItem) {
+          e.preventDefault();
+          const folderId = folderItem.dataset.folderId;
+          loadFolderContent(folderId);
+          switchToSection("folder-content", folderItem);
+        }
+      });
+    }
+  }
+
+  // Switch between content sections
+  function switchToSection(sectionName, activeNavItem) {
+    // Remove active from all nav items
+    document.querySelectorAll(".nav-item").forEach((item) => item.classList.remove("active"));
+    if (activeNavItem) {
+      activeNavItem.classList.add("active");
+    }
+
+    // Hide all content sections
+    contentSections.forEach((section) => section.classList.remove("active"));
+
+    // Show target section
+    const targetSection = document.getElementById(`${sectionName}-section`);
+    if (targetSection) {
+      targetSection.classList.add("active");
+    }
+
+    // Load content based on section
+    switch (sectionName) {
+      case "all-links":
+        loadAllLinks();
+        break;
+      case "reminders":
+        loadReminders();
+        break;
+      case "debug":
+        initDebugInfo();
+        break;
+      case "logs":
+        loadLogs();
+        break;
+      case "advanced":
+        // Advanced settings section is static
+        break;
+    }
+  }
+
+  // Initialize folder management
+  function initFolderManagement() {
+    if (addFolderBtn) {
+      addFolderBtn.addEventListener("click", () => {
+        addFolderModal.classList.add("show");
+        newFolderInput.focus();
+      });
+    }
+
+    if (cancelFolderBtn) {
+      cancelFolderBtn.addEventListener("click", () => {
+        addFolderModal.classList.remove("show");
+        newFolderInput.value = "";
+      });
+    }
+
+    if (createFolderBtn) {
+      createFolderBtn.addEventListener("click", async () => {
+        const folderName = newFolderInput.value.trim();
+        if (folderName) {
+          await createFolder(folderName);
+          addFolderModal.classList.remove("show");
+          newFolderInput.value = "";
+        }
+      });
+    }
+
+    if (newFolderInput) {
+      newFolderInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") {
+          createFolderBtn.click();
+        } else if (e.key === "Escape") {
+          cancelFolderBtn.click();
+        }
+      });
+    }
+
+    if (addFolderModal) {
+      addFolderModal.addEventListener("click", (e) => {
+        if (e.target === addFolderModal) {
+          cancelFolderBtn.click();
+        }
+      });
+    }
+  }
+
+  // Create new folder
+  async function createFolder(name) {
+    try {
+      const result = await chrome.storage.local.get(["folders"]);
+      const folders = result.folders || [];
+
+      if (folders.some((folder) => folder.name.toLowerCase() === name.toLowerCase())) {
+        showNotification("Folder already exists", "error");
+        return;
+      }
+
+      const newFolder = {
+        id: generateId(),
+        name: name,
+        createdAt: new Date().toISOString(),
+      };
+
+      folders.push(newFolder);
+      await chrome.storage.local.set({ folders });
+
+      await loadFolders();
+      await updateReminderCounts();
+      showNotification("Folder created successfully", "success");
+    } catch (error) {
+      console.error("Error creating folder:", error);
+      showNotification("Failed to create folder", "error");
+    }
+  }
+
+  // Load folders in sidebar
+  async function loadFolders() {
+    try {
+      const result = await chrome.storage.local.get(["folders", "reminders"]);
+      const folders = result.folders || [];
+      const reminders = result.reminders || [];
+
+      if (folders.length === 0) {
+        foldersNav.innerHTML = '<li class="empty-folders"><span class="empty-text">No folders yet</span></li>';
+        return;
+      }
+
+      const folderCounts = {};
+      reminders.forEach((reminder) => {
+        if (reminder.folderId) {
+          folderCounts[reminder.folderId] = (folderCounts[reminder.folderId] || 0) + 1;
+        }
+      });
+
+      const folderHTML = folders
+        .map(
+          (folder) => `
+        <li>
+          <button class="nav-item folder-item" data-section="folder-content" data-folder-id="${folder.id}">
+            <span class="nav-text">${escapeHtml(folder.name)}</span>
+            <span class="nav-count">${folderCounts[folder.id] || 0}</span>
+          </button>
+        </li>
+      `
+        )
+        .join("");
+
+      foldersNav.innerHTML = folderHTML;
+    } catch (error) {
+      console.error("Error loading folders:", error);
+    }
+  }
+
+  // Load folder content
+  async function loadFolderContent(folderId) {
+    try {
+      const result = await chrome.storage.local.get(["folders", "reminders"]);
+      const folders = result.folders || [];
+      const reminders = result.reminders || [];
+
+      const folder = folders.find((f) => f.id === folderId);
+      if (!folder) return;
+
+      const folderLinks = reminders.filter((r) => r.folderId === folderId);
+
+      const folderTitle = document.getElementById("folder-title");
+      if (folderTitle) {
+        folderTitle.textContent = folder.name;
+      }
+
+      const folderLinksGrid = document.getElementById("folder-links-grid");
+      if (folderLinksGrid) {
+        if (folderLinks.length === 0) {
+          folderLinksGrid.innerHTML = '<div class="empty-state">This folder is empty</div>';
+        } else {
+          const linksHTML = folderLinks.map((link) => createLinkHTML(link)).join("");
+          folderLinksGrid.innerHTML = linksHTML;
+        }
+      }
+    } catch (error) {
+      console.error("Error loading folder content:", error);
+    }
+  }
+
+  // Load all links
+  async function loadAllLinks() {
+    try {
+      const result = await chrome.storage.local.get(["reminders"]);
+      const reminders = result.reminders || [];
+
+      const allLinksGrid = document.getElementById("all-links-grid");
+      if (allLinksGrid) {
+        if (reminders.length === 0) {
+          allLinksGrid.innerHTML = '<div class="empty-state">No links saved yet</div>';
+        } else {
+          const linksHTML = reminders.map((link) => createLinkHTML(link)).join("");
+          allLinksGrid.innerHTML = linksHTML;
+        }
+      }
+    } catch (error) {
+      console.error("Error loading all links:", error);
+    }
+  }
+
+  // Load logs
+  function loadLogs() {
+    const logsContainer = document.getElementById("activity-logs");
+    if (logsContainer) {
+      logsContainer.innerHTML = '<div class="empty-state">No activity logs available</div>';
+    }
+  }
+
+  // Create link HTML
+  function createLinkHTML(link) {
+    const reminderDate = new Date(link.reminderDate);
+    const now = new Date();
+    const isPast = reminderDate <= now;
+    const status = link.triggered ? "Completed" : isPast ? "Overdue" : "Scheduled";
+
+    return `
+      <div class="link-item" data-id="${link.id}">
+        <div class="link-content">
+          <div class="link-title">${escapeHtml(link.title)}</div>
+          <div class="link-url">${escapeHtml(link.url)}</div>
+          <div class="link-meta">
+            <span class="link-status ${status.toLowerCase()}">${status}</span>
+            <span class="link-date">${reminderDate.toLocaleDateString()}</span>
+          </div>
+        </div>
+        <div class="link-actions">
+          <button class="action-btn primary" onclick="openLink('${link.url}')">Open</button>
+          <button class="action-btn danger" onclick="deleteReminderFromLink('${link.id}')">Delete</button>
+        </div>
+      </div>
+    `;
+  }
+
+  // Update reminder counts
+  async function updateReminderCounts() {
+    try {
+      const result = await chrome.storage.local.get(["reminders"]);
+      const reminders = result.reminders || [];
+
+      const now = new Date();
+      const upcomingCount = reminders.filter((r) => new Date(r.reminderDate) > now && !r.triggered).length;
+
+      const allLinksCount = document.querySelector('[data-section="all-links"] .nav-count');
+      const remindersCount = document.querySelector('[data-section="reminders"] .nav-count');
+
+      if (allLinksCount) allLinksCount.textContent = reminders.length;
+      if (remindersCount) remindersCount.textContent = upcomingCount;
+    } catch (error) {
+      console.error("Error updating counts:", error);
+    }
+  }
+
+  // Generate unique ID
+  function generateId() {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+  }
+
+  // Global functions
+  window.openLink = async (url) => {
+    await chrome.tabs.create({ url });
+  };
+
+  window.deleteReminderFromLink = async (reminderId) => {
+    if (confirm("Are you sure you want to delete this reminder?")) {
+      try {
+        await deleteReminder(reminderId);
+        await loadAllLinks();
+        await loadFolders();
+        await updateReminderCounts();
+        showNotification("Reminder deleted successfully", "success");
+      } catch (error) {
+        console.error("Error deleting reminder:", error);
+        showNotification("Failed to delete reminder", "error");
+      }
+    }
+  };
+
+  // Initialize everything
+  initSidebarNavigation();
+  initFolderManagement();
+  await loadFolders();
+  await updateReminderCounts();
+
+  // Load initial section (All Links)
+  const allLinksNav = document.querySelector('[data-section="all-links"]');
+  if (allLinksNav) {
+    switchToSection("all-links", allLinksNav);
+  }
 
   // Initialize debug info on load
   async function initDebugInfo() {

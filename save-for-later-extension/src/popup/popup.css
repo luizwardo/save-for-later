@@ -1,8 +1,8 @@
 body {
-  width: 380px;
+  width: 580px;
   max-height: 180px;
-  margin: 0;
   padding: 16px;
+  margin: 0;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   background: #2a2a2a;
   color: #a3a3a3;
@@ -13,6 +13,7 @@ body {
 }
 
 header {
+  width: 100%;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -32,13 +33,14 @@ h3 {
   width: 32px;
   height: 32px;
   padding: 0;
-  border: 1px solid #404040;
+  border: none;
   border-radius: 8px;
   background: transparent;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.2s ease;
 }
 
 #settings:before {
@@ -47,6 +49,10 @@ h3 {
   height: 20px;
   background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23e0e0e0"><path d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"/></svg>')
     no-repeat center;
+}
+#settings:hover{
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.1);
 }
 
 .section {
