@@ -31,19 +31,33 @@
     </div>
 
     <div class="section">
+        <div class="section-title">Organization</div>
+        <div class="inputs-grid">
+            <div class="input-group">
+                <select id="folder-select">
+                    <option value="">Select folder</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <input type="text" id="new-folder" placeholder="Create new folder">
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
         <div class="section-title">For Later</div>
         <div class="inputs-grid">
             <div class="input-group">
-                <input type="number" id="delay-hours" placeholder="Hours" min="0" max="23" value="1">
+                <input type="number" id="delay-hours" placeholder="Hours" min="0" max="23">
             </div>
             <div class="input-group">
-                <input type="number" id="delay-minutes" placeholder="Minutes" min="0" max="59" value="0">
+                <input type="number" id="delay-minutes" placeholder="Minutes" min="0" max="59">
             </div>
         </div>
         <div class="delay-info">
             <span id="reminder-preview">Reminder will be set for: <span id="preview-time"></span></span>
         </div>
-        <button id="set-reminder">Remind me later</button>
+        <button id="set-reminder">Save for Later</button>
         <div class="action-buttons">
         </div>
     </div>

@@ -92,7 +92,27 @@ h3 {
   box-sizing: border-box;
 }
 
+.input-group select {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #404040;
+  border-radius: 12px;
+  background: #2a2a2a;
+  color: #e0e0e0;
+  font-size: 12px;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
 .input-group input:focus {
+  outline: none;
+  border-color: #505050;
+  background: #353535;
+}
+
+.input-group select:focus {
   outline: none;
   border-color: #505050;
   background: #353535;
@@ -177,4 +197,10 @@ body {
 .input-group input[type="number"] {
   -moz-appearance: textfield;
   appearance: textfield;
+}
+
+.input-group select option {
+  background: #353535;
+  color: #e0e0e0;
+  padding: 8px;
 }

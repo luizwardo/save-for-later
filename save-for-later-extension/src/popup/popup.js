@@ -6,6 +6,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   const setReminderBtn = document.getElementById("set-reminder");
   const settingsBtn = document.getElementById("settings");
   const previewTime = document.getElementById("preview-time");
+  
+  // Folder elements
+  const folderSelect = document.getElementById("folder-select");
+  const newFolderInput = document.getElementById("new-folder");
 
   // Get current tab URL and title when popup opens
   try {
@@ -47,12 +51,102 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Initial preview update
   updatePreview();
 
+  // Load folders into select dropdown
+  async function loadFolders() {
+    try {
+      const result = await chrome.storage.local.get(["folders"]);
+      const folders = result.folders || [];
+      
+      // Clear existing options except the first one
+      folderSelect.innerHTML = '<option value="">Select folder</option>';
+      
+      // Add folders to select
+      folders.forEach(folder => {
+        const option = document.createElement("option");
+        option.value = folder.id;
+        option.textContent = folder.name;
+        folderSelect.appendChild(option);
+      });
+    } catch (error) {
+      console.error("Error loading folders:", error);
+    }
+  }
+
+  // Create new folder
+  async function createFolder(name) {
+    try {
+      const result = await chrome.storage.local.get(["folders"]);
+      const folders = result.folders || [];
+      
+      // Check if folder already exists
+      if (folders.some(folder => folder.name.toLowerCase() === name.toLowerCase())) {
+        showError("Folder already exists");
+        return null;
+      }
+
+      const newFolder = {
+        id: generateId(),
+        name: name,
+        createdAt: new Date().toISOString()
+      };
+
+      folders.push(newFolder);
+      await chrome.storage.local.set({ folders });
+      
+      await loadFolders();
+      return newFolder.id;
+    } catch (error) {
+      console.error("Error creating folder:", error);
+      showError("Failed to create folder");
+      return null;
+    }
+  }
+
+  // Handle new folder creation
+  newFolderInput.addEventListener("keypress", async (e) => {
+    if (e.key === "Enter") {
+      const folderName = newFolderInput.value.trim();
+      if (folderName) {
+        const folderId = await createFolder(folderName);
+        if (folderId) {
+          folderSelect.value = folderId;
+          newFolderInput.value = "";
+          showSuccess("Folder created successfully!");
+        }
+      }
+    }
+  });
+
+  // Clear new folder input when selecting existing folder
+  folderSelect.addEventListener("change", () => {
+    if (folderSelect.value) {
+      newFolderInput.value = "";
+    }
+  });
+
+  // Generate unique ID
+  function generateId() {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+  }
+
+  // Load folders on startup
+  await loadFolders();
+
   // Handle reminder setting
   setReminderBtn.addEventListener("click", async () => {
     const url = urlInput.value.trim();
     const customTitle = titleInput.value.trim();
     const hours = parseInt(delayHours.value) || 0;
     const minutes = parseInt(delayMinutes.value) || 0;
+    
+    // Get selected folder or create new one
+    let selectedFolderId = folderSelect.value;
+    const newFolderName = newFolderInput.value.trim();
+    
+    if (!selectedFolderId && newFolderName) {
+      selectedFolderId = await createFolder(newFolderName);
+      if (!selectedFolderId) return; // Failed to create folder
+    }
 
     if (!url) {
       showError("Please enter a URL");
@@ -65,7 +159,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     try {
-      await saveReminder(url, customTitle, hours, minutes);
+      await saveReminder(url, customTitle, hours, minutes, selectedFolderId);
       showSuccess("Reminder set successfully!");
       setTimeout(() => window.close(), 1500);
     } catch (error) {
@@ -83,7 +177,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 });
 
-async function saveReminder(url, customTitle, hours, minutes) {
+async function saveReminder(url, customTitle, hours, minutes, folderId = null) {
   // Get current tab title if no custom title provided
   let title = customTitle;
   if (!title) {
@@ -112,6 +206,7 @@ async function saveReminder(url, customTitle, hours, minutes) {
     createdAt: new Date().toISOString(),
     delayHours: hours,
     delayMinutes: minutes,
+    folderId: folderId || null
   };
 
   // Save to storage
