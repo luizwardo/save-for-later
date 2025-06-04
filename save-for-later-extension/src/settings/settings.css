@@ -221,6 +221,48 @@ h2 {
   letter-spacing: 1px;
 }
 
+/* Debug section */
+.debug-info {
+  margin-top: 16px;
+  padding: 12px;
+  background: #2a2a2a;
+  border: 1px solid #404040;
+  border-radius: 8px;
+  font-family: monospace;
+  font-size: 12px;
+  color: #b0b0b0;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.debug-info .log-entry {
+  margin-bottom: 8px;
+  padding: 4px 0;
+  border-bottom: 1px solid #353535;
+}
+
+.debug-info .log-entry:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.debug-info .timestamp {
+  color: #888888;
+  margin-right: 8px;
+}
+
+.debug-info .log-level-error {
+  color: #ff6666;
+}
+
+.debug-info .log-level-success {
+  color: #66ff66;
+}
+
+.debug-info .log-level-info {
+  color: #66aaff;
+}
+
 /* Responsive design */
 @media (max-width: 600px) {
   .container {

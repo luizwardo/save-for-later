@@ -139,3 +139,36 @@ body {
     transform: translateY(0);
   }
 }
+
+.delay-info {
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: #353535;
+  border-radius: 8px;
+  border: 1px solid #404040;
+}
+
+.delay-info span {
+  font-size: 11px;
+  color: #b0b0b0;
+}
+
+#preview-time {
+  color: #ace6ff;
+  font-weight: 500;
+}
+
+.input-group input[type="number"] {
+  text-align: center;
+}
+
+.input-group input[type="number"]::-webkit-outer-spin-button,
+.input-group input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.input-group input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}

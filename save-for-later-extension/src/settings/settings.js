@@ -4,6 +4,85 @@ document.addEventListener("DOMContentLoaded", async () => {
   const pastRemindersContainer = document.getElementById("past-reminders");
   const backBtn = document.getElementById("back-btn");
   const clearAllBtn = document.getElementById("clear-all-btn");
+  const testNotificationBtn = document.getElementById("test-notification-btn");
+  const debugInfo = document.getElementById("debug-info");
+
+  // Debug logging function
+  function debugLog(message, level = "info") {
+    const timestamp = new Date().toLocaleTimeString();
+    const logEntry = document.createElement("div");
+    logEntry.className = `log-entry log-level-${level}`;
+    logEntry.innerHTML = `<span class="timestamp">${timestamp}</span>${message}`;
+    debugInfo.appendChild(logEntry);
+    debugInfo.scrollTop = debugInfo.scrollHeight;
+    console.log(`[Settings] ${message}`);
+  }
+
+  // Test notification button
+  testNotificationBtn.addEventListener("click", async () => {
+    debugLog("Testing notification...", "info");
+
+    try {
+      // Check notification permission
+      const permission = await Notification.requestPermission();
+      debugLog(
+        `Notification permission: ${permission}`,
+        permission === "granted" ? "success" : "error"
+      );
+
+      if (permission !== "granted") {
+        debugLog(
+          "Notification permission denied. Please enable notifications for this extension.",
+          "error"
+        );
+        return;
+      }
+
+      // Send message to background script to create notification
+      const response = await chrome.runtime.sendMessage({
+        action: "testNotification",
+      });
+
+      if (response && response.success) {
+        debugLog("Test notification sent successfully!", "success");
+      } else {
+        debugLog("Failed to send test notification", "error");
+      }
+    } catch (error) {
+      debugLog(`Error testing notification: ${error.message}`, "error");
+      console.error("Test notification error:", error);
+    }
+  });
+
+  // Initialize debug info on load
+  async function initDebugInfo() {
+    try {
+      // Check permissions
+      const permissions = await chrome.permissions.getAll();
+      debugLog(
+        `Extension permissions: ${permissions.permissions.join(", ")}`,
+        "info"
+      );
+
+      // Check alarms
+      const alarms = await chrome.alarms.getAll();
+      debugLog(`Active alarms: ${alarms.length}`, "info");
+      alarms.forEach((alarm) => {
+        const triggerTime = new Date(alarm.scheduledTime).toLocaleString();
+        debugLog(`Alarm ${alarm.name}: ${triggerTime}`, "info");
+      });
+
+      // Check storage
+      const storage = await chrome.storage.local.get(["reminders"]);
+      const reminders = storage.reminders || [];
+      debugLog(`Stored reminders: ${reminders.length}`, "info");
+    } catch (error) {
+      debugLog(`Error initializing debug info: ${error.message}`, "error");
+    }
+  }
+
+  // Initialize debug info
+  initDebugInfo();
 
   // Back button functionality
   backBtn.addEventListener("click", () => {
@@ -109,6 +188,26 @@ function createReminderHTML(reminder, type) {
   const isOverdue = isPast && !isTriggered;
 
   let statusText = "";
+  let delayInfo = "";
+
+  // Calculate delay information
+  if (
+    reminder.delayHours !== undefined ||
+    reminder.delayMinutes !== undefined
+  ) {
+    const hours = reminder.delayHours || 0;
+    const minutes = reminder.delayMinutes || 0;
+    delayInfo = `Delay: ${hours}h ${minutes}m`;
+  } else {
+    // For older reminders without delay info, calculate from dates
+    const createdTime = new Date(reminder.createdAt);
+    const scheduledTime = new Date(reminder.reminderDate);
+    const delayMs = scheduledTime.getTime() - createdTime.getTime();
+    const hours = Math.floor(delayMs / (1000 * 60 * 60));
+    const minutes = Math.floor((delayMs % (1000 * 60 * 60)) / (1000 * 60));
+    delayInfo = `Delay: ${hours}h ${minutes}m`;
+  }
+
   if (isTriggered) {
     statusText = `Triggered on ${new Date(
       reminder.triggeredAt
@@ -116,10 +215,13 @@ function createReminderHTML(reminder, type) {
   } else if (isOverdue) {
     statusText = "Overdue";
   } else if (type === "upcoming") {
-    statusText = `Scheduled for ${reminderDate.toLocaleDateString()} at ${reminderDate.toLocaleTimeString(
+    const timeLeft = reminderDate.getTime() - now.getTime();
+    const hoursLeft = Math.floor(timeLeft / (1000 * 60 * 60));
+    const minutesLeft = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+    statusText = `Due in ${hoursLeft}h ${minutesLeft}m (${reminderDate.toLocaleDateString()} at ${reminderDate.toLocaleTimeString(
       [],
       { hour: "2-digit", minute: "2-digit" }
-    )}`;
+    )})`;
   }
 
   return `
@@ -133,7 +235,7 @@ function createReminderHTML(reminder, type) {
                     Created: ${createdDate.toLocaleDateString()} at ${createdDate.toLocaleTimeString(
     [],
     { hour: "2-digit", minute: "2-digit" }
-  )}
+  )} • ${delayInfo}
                 </div>
                 ${
                   statusText
@@ -149,7 +251,7 @@ function createReminderHTML(reminder, type) {
                 </button>
                 ${
                   type === "upcoming" && !isTriggered
-                    ? `<button class="action-btn" data-action="edit" data-id="${reminder.id}">Edit</button>`
+                    ? `<button class="action-btn" data-action="edit" data-id="${reminder.id}">Edit Delay</button>`
                     : ""
                 }
                 <button class="action-btn danger" data-action="delete" data-id="${
@@ -201,42 +303,58 @@ async function handleReminderAction(event) {
 
 async function editReminder(reminder) {
   const currentDate = new Date(reminder.reminderDate);
+  const now = new Date();
+  const timeDiffMs = currentDate.getTime() - now.getTime();
+  const currentHours = Math.floor(timeDiffMs / (1000 * 60 * 60));
+  const currentMinutes = Math.floor(
+    (timeDiffMs % (1000 * 60 * 60)) / (1000 * 60)
+  );
 
-  // Create a simple edit dialog
-  const newDateStr = prompt(
-    `Edit reminder date for: ${
+  // Create a simple edit dialog for delay
+  const newHoursStr = prompt(
+    `Edit reminder delay for: ${
       reminder.title
-    }\n\nCurrent date/time: ${currentDate.toLocaleString()}\n\nEnter new date (YYYY-MM-DD):`,
-    currentDate.toISOString().split("T")[0]
+    }\n\nCurrent delay: ${currentHours} hours, ${currentMinutes} minutes\nScheduled for: ${currentDate.toLocaleString()}\n\nEnter new delay in hours:`,
+    Math.max(0, currentHours).toString()
   );
 
-  if (newDateStr === null) return; // User cancelled
+  if (newHoursStr === null) return; // User cancelled
 
-  const newTimeStr = prompt(
-    `Enter new time (HH:MM):`,
-    currentDate.toTimeString().slice(0, 5)
+  const newMinutesStr = prompt(
+    `Enter additional minutes (0-59):`,
+    Math.max(0, currentMinutes).toString()
   );
 
-  if (newTimeStr === null) return; // User cancelled
+  if (newMinutesStr === null) return; // User cancelled
 
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(newDateStr)) {
-    showNotification("Invalid date format. Please use YYYY-MM-DD", "error");
+  const newHours = parseInt(newHoursStr);
+  const newMinutes = parseInt(newMinutesStr);
+
+  if (isNaN(newHours) || newHours < 0) {
+    showNotification("Invalid hours. Please enter a number >= 0", "error");
     return;
   }
 
-  if (!/^\d{2}:\d{2}$/.test(newTimeStr)) {
-    showNotification("Invalid time format. Please use HH:MM", "error");
+  if (isNaN(newMinutes) || newMinutes < 0 || newMinutes > 59) {
+    showNotification(
+      "Invalid minutes. Please enter a number between 0-59",
+      "error"
+    );
+    return;
+  }
+
+  if (newHours === 0 && newMinutes === 0) {
+    showNotification(
+      "Delay cannot be 0. Please set at least 1 minute",
+      "error"
+    );
     return;
   }
 
   try {
-    const newDate = new Date(`${newDateStr}T${newTimeStr}:00`);
-
-    // Check if the reminder date is in the past
-    if (newDate <= new Date()) {
-      showNotification("Reminder time cannot be in the past", "error");
-      return;
-    }
+    // Calculate new reminder date based on delay from now
+    const newDelayMs = (newHours * 60 + newMinutes) * 60 * 1000;
+    const newDate = new Date(now.getTime() + newDelayMs);
 
     // Update reminder
     const result = await chrome.storage.local.get(["reminders"]);

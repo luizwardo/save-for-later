@@ -34,18 +34,16 @@
         <div class="section-title">For Later</div>
         <div class="inputs-grid">
             <div class="input-group">
-                <input type="date" id="reminder-date" placeholder="Reminder Date">
+                <input type="number" id="delay-hours" placeholder="Hours" min="0" max="23" value="1">
             </div>
             <div class="input-group">
-                <div class="time-input-container">
-                    <input type="time" id="reminder-time" placeholder="Reminder Time">
-                </div>
+                <input type="number" id="delay-minutes" placeholder="Minutes" min="0" max="59" value="0">
             </div>
         </div>
+        <div class="delay-info">
+            <span id="reminder-preview">Reminder will be set for: <span id="preview-time"></span></span>
+        </div>
         <button id="set-reminder">Remind me later</button>
-        <button id="test-notification" style="margin-top: 8px; font-size: 10px; opacity: 0.7;">Test
-            Notification</button>
-        <button id="debug-btn" style="margin-top: 4px; font-size: 10px; opacity: 0.5;">🔧 Debug</button>
         <div class="action-buttons">
         </div>
     </div>
