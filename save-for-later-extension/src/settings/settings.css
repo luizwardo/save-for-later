@@ -57,6 +57,187 @@ body {
   border-color: #505050;
 }
 
+/* Reminders List Styling */
+.reminders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.reminder-item {
+  background: #2a2a2a;
+  border: 1px solid #404040;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: all 0.3s ease;
+  transform: scale(1);
+}
+
+.reminder-item:hover {
+  background: #353535;
+  border-color: #505050;
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.reminder-item.triggered {
+  opacity: 0.7;
+  border-color: #606060;
+}
+
+.reminder-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.site-preview-section {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+  align-items: flex-start;
+}
+
+.preview-image {
+  width: 80px;
+  height: 60px;
+  border: 1px solid #404040;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #1a1a1a;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.preview-image::before {
+  content: "📄";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 20px;
+  opacity: 0.5;
+  z-index: 1;
+}
+
+.mini-preview {
+  width: 200%;
+  height: 200%;
+  border: none;
+  transform: scale(0.5);
+  transform-origin: top left;
+  background: white;
+  position: relative;
+  z-index: 2;
+}
+
+.site-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.site-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.site-favicon {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+}
+
+.site-domain {
+  font-size: 12px;
+  color: #888888;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.reminder-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: #ffffff;
+  margin-bottom: 0;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.reminder-url {
+  font-size: 12px;
+  color: #ace6ff;
+  margin-bottom: 8px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.reminder-date {
+  font-size: 12px;
+  color: #aaaaaa;
+  margin-bottom: 8px;
+}
+
+.reminder-status {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.status-badge {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.status-badge.scheduled {
+  background: #0066cc;
+  color: white;
+}
+
+.status-badge.completed {
+  background: #44aa44;
+  color: white;
+}
+
+.status-badge.overdue {
+  background: #cc3333;
+  color: white;
+}
+
+.folder-tag {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  background: #454545;
+  color: #e0e0e0;
+}
+
+.reminder-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-start;
+  align-self: flex-start;
+  margin-top: auto;
+}
+
+.loading {
+  text-align: center;
+  color: #888888;
+  font-style: italic;
+  padding: 20px;
+}
+
 .sidebar-nav {
   flex: 1;
   padding: 20px 0;
@@ -234,11 +415,117 @@ body {
   padding: 16px;
   transition: all 0.2s ease;
   cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .link-item:hover {
   background: #353535;
   border-color: #505050;
+}
+
+.link-content {
+  flex: 1;
+}
+
+.link-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #ffffff;
+  margin-bottom: 4px;
+}
+
+.link-url {
+  font-size: 12px;
+  color: #888888;
+  margin-bottom: 8px;
+  word-break: break-all;
+}
+
+.link-meta {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.link-status {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.link-status.scheduled {
+  background: #0066cc;
+  color: white;
+}
+
+.link-status.completed {
+  background: #44aa44;
+  color: white;
+}
+
+.link-status.overdue {
+  background: #cc3333;
+  color: white;
+}
+
+.link-date {
+  font-size: 11px;
+  color: #888888;
+}
+
+.link-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.action-btn {
+  padding: 6px 12px;
+  border: 1px solid #404040;
+  border-radius: 4px;
+  background: transparent;
+  color: #e0e0e0;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+  background: #353535;
+  border-color: #505050;
+}
+
+.action-btn.primary {
+  background: transparent;
+  border-color: #505050;
+  color: #888888;
+}
+
+.action-btn.primary:hover {
+  background: #4e4e4ed8;
+  border-color: #505050;
+}
+
+.action-btn.danger {
+  background: #cc3333;
+  border-color: #cc3333;
+  color: white;
+}
+
+.action-btn.danger:hover {
+  background: #aa2222;
+  border-color: #aa2222;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #888888;
+  font-style: italic;
 }
 
 .settings-grid {

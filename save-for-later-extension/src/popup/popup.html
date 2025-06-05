@@ -19,6 +19,26 @@
     </header>
 
     <div class="section">
+        <div class="section-title">Preview</div>
+        <div id="site-preview" class="site-preview">
+            <div class="site-preview-section">
+                <div class="preview-image">
+                    <iframe id="mini-preview-iframe" class="mini-preview" src="" sandbox="allow-same-origin"
+                        loading="lazy"></iframe>
+                </div>
+                <div class="site-info">
+                    <div class="site-header">
+                        <img id="site-favicon" class="site-favicon" src="" alt="Favicon"
+                            onerror="this.style.display='none'">
+                        <span id="site-domain" class="site-domain">Loading...</span>
+                    </div>
+                    <div id="site-title" class="preview-title">Loading...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
         <div class="section-title">Saving</div>
         <div class="inputs-grid">
             <div class="input-group">

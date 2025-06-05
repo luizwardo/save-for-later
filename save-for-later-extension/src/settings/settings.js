@@ -309,37 +309,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // Load folder content
-  async function loadFolderContent(folderId) {
-    try {
-      const result = await chrome.storage.local.get(["folders", "reminders"]);
-      const folders = result.folders || [];
-      const reminders = result.reminders || [];
-
-      const folder = folders.find((f) => f.id === folderId);
-      if (!folder) return;
-
-      const folderLinks = reminders.filter((r) => r.folderId === folderId);
-
-      const folderTitle = document.getElementById("folder-title");
-      if (folderTitle) {
-        folderTitle.textContent = folder.name;
-      }
-
-      const folderLinksGrid = document.getElementById("folder-links-grid");
-      if (folderLinksGrid) {
-        if (folderLinks.length === 0) {
-          folderLinksGrid.innerHTML = '<div class="empty-state">This folder is empty</div>';
-        } else {
-          const linksHTML = folderLinks.map((link) => createLinkHTML(link)).join("");
-          folderLinksGrid.innerHTML = linksHTML;
-        }
-      }
-    } catch (error) {
-      console.error("Error loading folder content:", error);
-    }
-  }
-
   // Load all links
   async function loadAllLinks() {
     try {
@@ -360,37 +329,252 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
+  // Create link HTML for reminder-style display
+  function createLinkHTML(link) {
+    const reminderDate = new Date(link.reminderDate);
+    const createdDate = new Date(link.createdAt);
+    const now = new Date();
+    const isPast = reminderDate <= now;
+    const status = link.triggered ? "Completed" : isPast ? "Overdue" : "Scheduled";
+    
+    // Get folder name if it exists
+    let folderInfo = "";
+    if (link.folderId) {
+      folderInfo = `<span class="folder-tag"> In folder</span>`;
+    }
+
+    // Get domain for favicon
+    let domain = "";
+    try {
+      domain = new URL(link.url).hostname;
+    } catch (e) {
+      domain = "unknown";
+    }
+
+    return `
+      <div class="reminder-item" data-id="${link.id}">
+        <div class="reminder-content">
+          <div class="site-preview-section">
+            <div class="preview-image">
+              <iframe class="mini-preview" src="${link.url}" sandbox="allow-same-origin" loading="lazy"></iframe>
+            </div>
+            <div class="site-info">
+              <div class="site-header">
+                <img class="site-favicon" src="https://www.google.com/s2/favicons?domain=${domain}&sz=16" alt="Favicon" onerror="this.style.display='none'">
+                <span class="site-domain">${domain}</span>
+              </div>
+              <div class="reminder-title">${escapeHtml(link.title)}</div>
+            </div>
+          </div>
+          <div class="reminder-url">${escapeHtml(link.url)}</div>
+          <div class="reminder-date">
+            Created: ${createdDate.toLocaleDateString()} at ${createdDate.toLocaleTimeString(
+              [],
+              { hour: "2-digit", minute: "2-digit" }
+            )}<br>
+            Reminder: ${reminderDate.toLocaleDateString()} at ${reminderDate.toLocaleTimeString(
+              [],
+              { hour: "2-digit", minute: "2-digit" }
+            )}
+          </div>
+          <div class="reminder-status">
+            <span class="status-badge ${status.toLowerCase()}">${status}</span>
+            ${folderInfo}
+          </div>
+        </div>
+        <div class="reminder-actions">
+          <button class="action-btn primary" data-action="open" data-url="${link.url}">Open Link</button>
+          <button class="action-btn danger" data-action="delete" data-id="${link.id}">Delete</button>
+        </div>
+      </div>
+    `;
+  }
+
+  // Add event listeners for link actions
+  function addLinkEventListeners() {
+    // Remove existing listeners first
+    document.removeEventListener('click', handleLinkAction);
+    
+    // Add new listener
+    document.addEventListener('click', handleLinkAction);
+  }
+
+  // Handle link actions (open, delete)
+  async function handleLinkAction(event) {
+    const target = event.target;
+    
+    if (!target.classList.contains('action-btn')) return;
+    
+    const action = target.dataset.action;
+    const linkId = target.dataset.id;
+    const url = target.dataset.url;
+    const folderId = target.dataset.folderId;
+
+    try {
+      switch (action) {
+        case "open":
+          if (url) {
+            await chrome.tabs.create({ url });
+          }
+          break;
+
+        case "delete":
+          if (linkId && confirm("Are you sure you want to delete this reminder?")) {
+            await deleteReminder(linkId);
+            
+            // Refresh all displays
+            await loadAllLinks();
+            await loadFolders();
+            await updateReminderCounts();
+            await loadReminders();
+            
+            showNotification("Reminder deleted successfully", "success");
+          }
+          break;
+
+        case "edit-folder":
+          if (folderId) {
+            await editFolder(folderId);
+          }
+          break;
+
+        case "delete-folder":
+          if (folderId && confirm("Are you sure you want to delete this folder? All links in this folder will be deleted.")) {
+            await deleteFolder(folderId);
+          }
+          break;
+      }
+    } catch (error) {
+      console.error("Error handling link action:", error);
+      showNotification("Failed to perform action", "error");
+    }
+  }
+
+  // Edit folder name
+  async function editFolder(folderId) {
+    try {
+      const result = await chrome.storage.local.get(["folders"]);
+      const folders = result.folders || [];
+      const folder = folders.find(f => f.id === folderId);
+      
+      if (!folder) {
+        showNotification("Folder not found", "error");
+        return;
+      }
+
+      const newName = prompt("Enter new folder name:", folder.name);
+      if (!newName || newName.trim() === "") return;
+
+      const trimmedName = newName.trim();
+      
+      // Check if name already exists
+      if (folders.some(f => f.id !== folderId && f.name.toLowerCase() === trimmedName.toLowerCase())) {
+        showNotification("Folder name already exists", "error");
+        return;
+      }
+
+      // Update folder name
+      const updatedFolders = folders.map(f => 
+        f.id === folderId ? { ...f, name: trimmedName } : f
+      );
+
+      await chrome.storage.local.set({ folders: updatedFolders });
+      
+      // Refresh displays
+      await loadFolders();
+      await loadFolderContent(folderId);
+      
+      showNotification("Folder renamed successfully", "success");
+    } catch (error) {
+      console.error("Error editing folder:", error);
+      showNotification("Failed to edit folder", "error");
+    }
+  }
+
+  // Delete folder
+  async function deleteFolder(folderId) {
+    try {
+      const result = await chrome.storage.local.get(["folders", "reminders"]);
+      const folders = result.folders || [];
+      const reminders = result.reminders || [];
+
+      // Remove folder from folders array
+      const updatedFolders = folders.filter(f => f.id !== folderId);
+      
+      // Remove folderId from all reminders that were in this folder
+      const updatedReminders = reminders.map(r => 
+        r.folderId === folderId ? { ...r, folderId: null } : r
+      );
+
+      await chrome.storage.local.set({ 
+        folders: updatedFolders,
+        reminders: updatedReminders
+      });
+
+      // Refresh displays and go back to all links
+      await loadFolders();
+      await loadAllLinks();
+      await updateReminderCounts();
+      
+      // Switch to all links section
+      const allLinksNav = document.querySelector('[data-section="all-links"]');
+      if (allLinksNav) {
+        switchToSection("all-links", allLinksNav);
+      }
+      
+      showNotification("Folder deleted successfully", "success");
+    } catch (error) {
+      console.error("Error deleting folder:", error);
+      showNotification("Failed to delete folder", "error");
+    }
+  }
+
+  // Load folder content
+  async function loadFolderContent(folderId) {
+    try {
+      const result = await chrome.storage.local.get(["folders", "reminders"]);
+      const folders = result.folders || [];
+      const reminders = result.reminders || [];
+
+      const folder = folders.find((f) => f.id === folderId);
+      if (!folder) return;
+
+      const folderLinks = reminders.filter((r) => r.folderId === folderId);
+
+      const folderTitle = document.getElementById("folder-title");
+      if (folderTitle) {
+        folderTitle.textContent = folder.name;
+      }
+
+      // Update header actions with folder management buttons
+      const headerActions = document.querySelector("#folder-content-section .header-actions");
+      if (headerActions) {
+        headerActions.innerHTML = `
+          <button class="action-btn" data-action="edit-folder" data-folder-id="${folderId}">Edit</button>
+          <button class="action-btn danger" data-action="delete-folder" data-folder-id="${folderId}">Delete</button>
+        `;
+      }
+
+      const folderLinksGrid = document.getElementById("folder-links-grid");
+      if (folderLinksGrid) {
+        if (folderLinks.length === 0) {
+          folderLinksGrid.innerHTML = '<div class="empty-state">This folder is empty</div>';
+        } else {
+          const linksHTML = folderLinks.map((link) => createLinkHTML(link)).join("");
+          folderLinksGrid.innerHTML = linksHTML;
+        }
+      }
+    } catch (error) {
+      console.error("Error loading folder content:", error);
+    }
+  }
+
   // Load logs
   function loadLogs() {
     const logsContainer = document.getElementById("activity-logs");
     if (logsContainer) {
       logsContainer.innerHTML = '<div class="empty-state">No activity logs available</div>';
     }
-  }
-
-  // Create link HTML
-  function createLinkHTML(link) {
-    const reminderDate = new Date(link.reminderDate);
-    const now = new Date();
-    const isPast = reminderDate <= now;
-    const status = link.triggered ? "Completed" : isPast ? "Overdue" : "Scheduled";
-
-    return `
-      <div class="link-item" data-id="${link.id}">
-        <div class="link-content">
-          <div class="link-title">${escapeHtml(link.title)}</div>
-          <div class="link-url">${escapeHtml(link.url)}</div>
-          <div class="link-meta">
-            <span class="link-status ${status.toLowerCase()}">${status}</span>
-            <span class="link-date">${reminderDate.toLocaleDateString()}</span>
-          </div>
-        </div>
-        <div class="link-actions">
-          <button class="action-btn primary" onclick="openLink('${link.url}')">Open</button>
-          <button class="action-btn danger" onclick="deleteReminderFromLink('${link.id}')">Delete</button>
-        </div>
-      </div>
-    `;
   }
 
   // Update reminder counts
@@ -417,29 +601,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     return Date.now().toString(36) + Math.random().toString(36).substr(2);
   }
 
-  // Global functions
-  window.openLink = async (url) => {
-    await chrome.tabs.create({ url });
-  };
-
-  window.deleteReminderFromLink = async (reminderId) => {
-    if (confirm("Are you sure you want to delete this reminder?")) {
-      try {
-        await deleteReminder(reminderId);
-        await loadAllLinks();
-        await loadFolders();
-        await updateReminderCounts();
-        showNotification("Reminder deleted successfully", "success");
-      } catch (error) {
-        console.error("Error deleting reminder:", error);
-        showNotification("Failed to delete reminder", "error");
-      }
-    }
-  };
-
   // Initialize everything
   initSidebarNavigation();
   initFolderManagement();
+  addLinkEventListeners(); // Add this line
   await loadFolders();
   await updateReminderCounts();
 
@@ -630,7 +795,7 @@ function createReminderHTML(reminder, type) {
                     Created: ${createdDate.toLocaleDateString()} at ${createdDate.toLocaleTimeString(
     [],
     { hour: "2-digit", minute: "2-digit" }
-  )} • ${delayInfo}
+  )} | ${delayInfo}
                 </div>
                 ${
                   statusText

@@ -22,9 +22,39 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (!titleInput.value) {
         titleInput.placeholder = tab.title || "Custom Title (optional)";
       }
+      
+      // Load site preview
+      loadSitePreview(tab.url, tab.title);
     }
   } catch (error) {
     console.error("Error getting current tab:", error);
+  }
+
+  // Function to load site preview
+  function loadSitePreview(url, title) {
+    const siteTitle = document.getElementById("site-title");
+    const siteDomain = document.getElementById("site-domain");
+    const siteFavicon = document.getElementById("site-favicon");
+    const miniPreviewIframe = document.getElementById("mini-preview-iframe");
+
+    try {
+      const urlObj = new URL(url);
+      const domain = urlObj.hostname;
+
+      // Update preview info
+      if (siteTitle) siteTitle.textContent = title || "Untitled";
+      if (siteDomain) siteDomain.textContent = domain;
+      if (siteFavicon) {
+        siteFavicon.src = `https://www.google.com/s2/favicons?domain=${domain}&sz=16`;
+      }
+      if (miniPreviewIframe) {
+        miniPreviewIframe.src = url;
+      }
+    } catch (error) {
+      console.error("Error loading site preview:", error);
+      if (siteTitle) siteTitle.textContent = "Invalid URL";
+      if (siteDomain) siteDomain.textContent = "unknown";
+    }
   }
 
   // Function to update preview time

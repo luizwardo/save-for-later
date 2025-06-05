@@ -1,6 +1,6 @@
 body {
   width: 580px;
-  max-height: 180px;
+  max-height: 280px;
   padding: 16px;
   margin: 0;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
@@ -199,8 +199,86 @@ body {
   appearance: textfield;
 }
 
-.input-group select option {
+/* Site Preview Styling */
+.site-preview {
   background: #353535;
-  color: #e0e0e0;
-  padding: 8px;
+  border: 1px solid #404040;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.site-preview-section {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.preview-image {
+  width: 60px;
+  height: 45px;
+  border: 1px solid #404040;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #1a1a1a;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.preview-image::before {
+  content: "📄";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 16px;
+  opacity: 0.5;
+  z-index: 1;
+}
+
+.mini-preview {
+  width: 200%;
+  height: 200%;
+  border: none;
+  transform: scale(0.5);
+  transform-origin: top left;
+  background: white;
+  position: relative;
+  z-index: 2;
+}
+
+.site-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.site-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.site-favicon {
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+}
+
+.site-domain {
+  font-size: 10px;
+  color: #888888;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.preview-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: #ffffff;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  line-height: 1.3;
 }
