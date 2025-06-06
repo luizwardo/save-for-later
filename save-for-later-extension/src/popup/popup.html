@@ -4,12 +4,6 @@
 <head>
     <title>Save for Later</title>
     <link rel="stylesheet" type="text/css" href="popup.css">
-    <style>
-        #url-input,
-        #title-input {
-            color: #ACE6FF !important;
-        }
-    </style>
 </head>
 
 <body>
@@ -28,8 +22,7 @@
                 </div>
                 <div class="site-info">
                     <div class="site-header">
-                        <img id="site-favicon" class="site-favicon" src="" alt="Favicon"
-                            onerror="this.style.display='none'">
+                        <img id="site-favicon" class="site-favicon" src="" alt="Favicon">
                         <span id="site-domain" class="site-domain">Loading...</span>
                     </div>
                     <div id="site-title" class="preview-title">Loading...</div>
@@ -52,31 +45,33 @@
 
     <div class="section">
         <div class="section-title">Organization</div>
-        <div class="inputs-grid">
-            <div class="input-group">
-                <select id="folder-select">
-                    <option value="">Select folder</option>
-                </select>
-            </div>
-            <div class="input-group">
-                <input type="text" id="new-folder" placeholder="Create new folder">
-            </div>
+        <div class="folder-container">
+            <select id="folder-select">
+                <option value="">Select folder</option>
+            </select>
+            <button id="new-folder-btn" class="add-folder-btn" type="button">
+                <span class="plus-icon">+</span>
+            </button>
+            <input type="text" id="new-folder" class="new-folder-input hidden" placeholder="Folder name">
         </div>
     </div>
 
     <div class="section">
         <div class="section-title">For Later</div>
-        <div class="inputs-grid">
-            <div class="input-group">
-                <input type="number" id="delay-hours" placeholder="Hours" min="0" max="23">
+        
+        <div class="timeline-section">
+            <div class="timeline-title">Drag to set time:</div>
+            <div id="slot">
+                <div id="time-bar"></div>
             </div>
-            <div class="input-group">
-                <input type="number" id="delay-minutes" placeholder="Minutes" min="0" max="59">
+            <div class="timeline-bottom">
+                <div id="label">0m</div>
+                <div class="reminder-preview-block">
+                    <span id="preview-time">Please set a delay time</span>
+                </div>
             </div>
         </div>
-        <div class="delay-info">
-            <span id="reminder-preview">Reminder will be set for: <span id="preview-time"></span></span>
-        </div>
+        
         <button id="set-reminder">Save for Later</button>
         <div class="action-buttons">
         </div>
