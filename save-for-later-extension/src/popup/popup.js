@@ -44,29 +44,73 @@ document.addEventListener("DOMContentLoaded", async () => {
     const siteDomain = document.getElementById("site-domain");
     const siteFavicon = document.getElementById("site-favicon");
     const miniPreviewIframe = document.getElementById("mini-preview-iframe");
+    const previewImage = document.querySelector(".preview-image");
+
+    console.log("Loading site preview for:", url);
 
     try {
       const urlObj = new URL(url);
       const domain = urlObj.hostname;
 
       // Update preview info
-      if (siteTitle) siteTitle.textContent = title || "Untitled";
-      if (siteDomain) siteDomain.textContent = domain;
+      if (siteTitle) {
+        siteTitle.textContent = title || "Untitled";
+        console.log("Set title:", title);
+      }
+      if (siteDomain) {
+        siteDomain.textContent = domain;
+        console.log("Set domain:", domain);
+      }
+      
+      // Handle favicon
       if (siteFavicon) {
-        siteFavicon.src = `https://www.google.com/s2/favicons?domain=${domain}&sz=16`;
-        // Handle favicon error via JavaScript instead of inline handler
+        const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=16`;
+        siteFavicon.src = faviconUrl;
+        siteFavicon.style.display = 'block';
+        console.log("Loading favicon:", faviconUrl);
+        
         siteFavicon.onerror = function() {
+          console.log("Favicon failed to load");
           this.style.display = 'none';
         };
+        siteFavicon.onload = function() {
+          console.log("Favicon loaded successfully");
+        };
       }
-      // Disable iframe to avoid CSP issues
-      if (miniPreviewIframe) {
-        miniPreviewIframe.style.display = 'none';
+
+      // Handle iframe preview
+      if (miniPreviewIframe && previewImage) {
+        console.log("Setting up iframe preview");
+        
+        // Remove sandbox restrictions temporarily for testing
+        miniPreviewIframe.removeAttribute('sandbox');
+        
+        // Try to load the site directly
+        miniPreviewIframe.src = url;
+        miniPreviewIframe.style.display = 'block';
+        
+        // Set loaded state after a short delay to show iframe
+        setTimeout(() => {
+          previewImage.classList.add('loaded');
+          console.log("Preview marked as loaded");
+        }, 1000);
+
+        miniPreviewIframe.onload = function() {
+          console.log("Iframe loaded successfully");
+          previewImage.classList.add('loaded');
+        };
+
+        miniPreviewIframe.onerror = function() {
+          console.log("Iframe failed to load");
+          previewImage.classList.remove('loaded');
+        };
       }
+      
     } catch (error) {
       console.error("Error loading site preview:", error);
       if (siteTitle) siteTitle.textContent = "Invalid URL";
       if (siteDomain) siteDomain.textContent = "unknown";
+      if (siteFavicon) siteFavicon.style.display = 'none';
     }
   }
 
@@ -283,6 +327,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Load folders on startup
   await loadFolders();
 
+  // Modal elements
+  const successModal = document.getElementById('success-modal');
+  const successMessage = document.getElementById('success-message');
+  const openSettingsBtn = document.getElementById('open-settings-btn');
+  const closePopupBtn = document.getElementById('close-popup-btn');
+
   // Handle reminder setting - only add if element exists
   if (setReminderBtn) {
     setReminderBtn.addEventListener("click", async () => {
@@ -310,8 +360,20 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       try {
         await saveReminder(url, customTitle, currentHours, currentMinutes, selectedFolderId);
-        showSuccess("Reminder set successfully!");
-        setTimeout(() => window.close(), 1500);
+        
+        // Show success modal instead of closing immediately
+        const timeText = currentHours > 0 ? 
+          `${currentHours}h ${currentMinutes}m` : 
+          `${currentMinutes}m`;
+        
+        if (successMessage) {
+          successMessage.textContent = `You'll be reminded in ${timeText}`;
+        }
+        
+        if (successModal) {
+          successModal.classList.remove('hidden');
+        }
+        
       } catch (error) {
         console.error("Error saving reminder:", error);
         showError("Failed to save reminder");
@@ -319,13 +381,28 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  // Handle settings button click - only add if element exists
-  if (settingsBtn) {
-    settingsBtn.addEventListener("click", () => {
+  // Handle modal buttons
+  if (openSettingsBtn) {
+    openSettingsBtn.addEventListener('click', () => {
       chrome.tabs.create({
         url: chrome.runtime.getURL("src/settings/settings.html"),
       });
       window.close();
+    });
+  }
+
+  if (closePopupBtn) {
+    closePopupBtn.addEventListener('click', () => {
+      window.close();
+    });
+  }
+
+  // Close modal when clicking outside
+  if (successModal) {
+    successModal.addEventListener('click', (e) => {
+      if (e.target === successModal) {
+        window.close();
+      }
     });
   }
 });
