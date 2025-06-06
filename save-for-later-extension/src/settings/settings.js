@@ -360,13 +360,13 @@ document.addEventListener("DOMContentLoaded", async () => {
             </div>
             <div class="site-info">
               <div class="site-header">
-                <img class="site-favicon" src="https://www.google.com/s2/favicons?domain=${domain}&sz=16" alt="Favicon" onerror="this.style.display='none'">
+                <img class="site-favicon" src="https://www.google.com/s2/favicons?domain=${domain}&sz=18" alt="Favicon" onerror="this.style.display='none'">
                 <span class="site-domain">${domain}</span>
               </div>
               <div class="reminder-title">${escapeHtml(link.title)}</div>
+              <div class="reminder-url">${escapeHtml(link.url)}</div>
             </div>
           </div>
-          <div class="reminder-url">${escapeHtml(link.url)}</div>
           <div class="reminder-date">
             Created: ${createdDate.toLocaleDateString()} at ${createdDate.toLocaleTimeString(
               [],
