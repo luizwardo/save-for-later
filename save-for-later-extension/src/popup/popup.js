@@ -1,4 +1,5 @@
 document.addEventListener("DOMContentLoaded", async () => {
+  // Get all elements including URL and title inputs
   const urlInput = document.getElementById("url-input");
   const titleInput = document.getElementById("title-input");
   const setReminderBtn = document.getElementById("set-reminder");
@@ -15,9 +16,17 @@ document.addEventListener("DOMContentLoaded", async () => {
   const slot = document.getElementById("slot");
   const timeBar = document.getElementById("time-bar");
   
+  // Modal elements
+  const successModal = document.getElementById('success-modal');
+  const successMessage = document.getElementById('success-message');
+  const openSettingsBtn = document.getElementById('open-settings-btn');
+  const closePopupBtn = document.getElementById('close-popup-btn');
+  
   let isResizing = false;
   let currentHours = 0;
   let currentMinutes = 0;
+  let currentTabUrl = '';
+  let currentTabTitle = '';
 
   // Get current tab URL and title when popup opens
   try {
@@ -26,10 +35,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       currentWindow: true,
     });
     if (tab) {
-      if (urlInput) urlInput.value = tab.url;
-      if (titleInput && !titleInput.value) {
-        titleInput.placeholder = tab.title || "Custom Title (optional)";
-      }
+      currentTabUrl = tab.url;
+      currentTabTitle = tab.title;
       
       // Load site preview
       loadSitePreview(tab.url, tab.title);
@@ -327,21 +334,16 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Load folders on startup
   await loadFolders();
 
-  // Modal elements
-  const successModal = document.getElementById('success-modal');
-  const successMessage = document.getElementById('success-message');
-  const openSettingsBtn = document.getElementById('open-settings-btn');
-  const closePopupBtn = document.getElementById('close-popup-btn');
-
-  // Handle reminder setting - only add if element exists
+  // Handle reminder setting
   if (setReminderBtn) {
     setReminderBtn.addEventListener("click", async () => {
-      const url = urlInput ? urlInput.value.trim() : "";
-      const customTitle = titleInput ? titleInput.value.trim() : "";
+      // Use current tab URL and title since inputs are removed
+      const url = currentTabUrl;
+      const customTitle = currentTabTitle;
       
       // Get selected folder or create new one
       let selectedFolderId = folderSelect ? folderSelect.value : "";
-      const newFolderName = newFolderInput ? newFolderInput.value.trim() : "";
+      const newFolderName = newFolderInput && !newFolderInput.classList.contains('hidden') ? newFolderInput.value.trim() : "";
       
       if (!selectedFolderId && newFolderName) {
         selectedFolderId = await createFolder(newFolderName);
@@ -349,7 +351,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
 
       if (!url) {
-        showError("Please enter a URL");
+        showError("No URL found for current tab");
         return;
       }
 
@@ -361,7 +363,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       try {
         await saveReminder(url, customTitle, currentHours, currentMinutes, selectedFolderId);
         
-        // Show success modal instead of closing immediately
+        // Show success modal
         const timeText = currentHours > 0 ? 
           `${currentHours}h ${currentMinutes}m` : 
           `${currentMinutes}m`;
@@ -403,6 +405,16 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (e.target === successModal) {
         window.close();
       }
+    });
+  }
+
+  // Handle settings button click
+  if (settingsBtn) {
+    settingsBtn.addEventListener("click", () => {
+      chrome.tabs.create({
+        url: chrome.runtime.getURL("src/settings/settings.html"),
+      });
+      window.close();
     });
   }
 });
