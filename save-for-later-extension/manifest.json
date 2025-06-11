@@ -3,7 +3,17 @@
   "name": "Save for Later",
   "version": "1.0",
   "description": "Save links for later viewing.",
-  "permissions": ["storage", "activeTab", "notifications", "alarms"],
+  "permissions": [
+    "storage",
+    "alarms",
+    "activeTab",
+    "tabs",
+    "webRequest"
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
   "background": {
     "service_worker": "src/background.js"
   },
