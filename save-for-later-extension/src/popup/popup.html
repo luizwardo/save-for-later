@@ -44,22 +44,29 @@
     </div>
 
     <div class="section">
-        <div class="section-title">For Later</div>
+        <div class="section-title">Set reminder time</div>
         
         <div class="timeline-section">
-            <div class="timeline-title">Drag to set time:</div>
-            <div id="slot">
-                <div id="time-bar"></div>
-            </div>
-            <div class="timeline-bottom">
-                <div id="label">0m</div>
-                <div class="reminder-preview-block">
-                    <span id="preview-time">Please set a delay time</span>
+            <div class="time-picker-wheels">
+                <div class="time-wheel">
+                    <div class="wheel-label">Hours</div>
+                    <div class="wheel-container" id="hours-wheel">
+                        <div class="wheel-items"></div>
+                    </div>
                 </div>
+                <div class="time-wheel">
+                    <div class="wheel-label">Minutes</div>
+                    <div class="wheel-container" id="minutes-wheel">
+                        <div class="wheel-items"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="reminder-preview-block">
+                <span id="preview-time">Please set a delay time</span>
             </div>
         </div>
         
-        <button id="set-reminder">Save for Later</button>
+        <button id="set-reminder">Confirm</button>
         <div class="action-buttons">
         </div>
     </div>
@@ -70,7 +77,7 @@
     <div id="success-modal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>✅ Link Saved Successfully!</h3>
+                <h3>Link Saved Successfully!</h3>
             </div>
             <div class="modal-body">
                 <p id="success-message">Your reminder has been set.</p>
