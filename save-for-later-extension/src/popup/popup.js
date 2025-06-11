@@ -1,7 +1,5 @@
 document.addEventListener("DOMContentLoaded", async () => {
-  // Get all elements including URL and title inputs
-  const urlInput = document.getElementById("url-input");
-  const titleInput = document.getElementById("title-input");
+  // Get all elements except slider-related ones
   const setReminderBtn = document.getElementById("set-reminder");
   const settingsBtn = document.getElementById("settings");
   const previewTime = document.getElementById("preview-time");
@@ -11,10 +9,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   const newFolderInput = document.getElementById("new-folder");
   const newFolderBtn = document.getElementById("new-folder-btn");
 
-  // Timeline elements
-  const label = document.getElementById("label");
-  const slot = document.getElementById("slot");
-  const timeBar = document.getElementById("time-bar");
+  // Time picker elements (now embedded)
+  const hoursWheel = document.getElementById('hours-wheel');
+  const minutesWheel = document.getElementById('minutes-wheel');
   
   // Modal elements
   const successModal = document.getElementById('success-modal');
@@ -22,7 +19,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   const openSettingsBtn = document.getElementById('open-settings-btn');
   const closePopupBtn = document.getElementById('close-popup-btn');
   
-  let isResizing = false;
   let currentHours = 0;
   let currentMinutes = 0;
   let currentTabUrl = '';
@@ -85,32 +81,100 @@ document.addEventListener("DOMContentLoaded", async () => {
         };
       }
 
-      // Handle iframe preview
+      // Handle iframe preview with better scaling for 120x100px
       if (miniPreviewIframe && previewImage) {
         console.log("Setting up iframe preview");
         
-        // Remove sandbox restrictions temporarily for testing
+        // Remove sandbox to allow better loading
         miniPreviewIframe.removeAttribute('sandbox');
         
-        // Try to load the site directly
+        // Set iframe to load the website
         miniPreviewIframe.src = url;
         miniPreviewIframe.style.display = 'block';
         
-        // Set loaded state after a short delay to show iframe
-        setTimeout(() => {
-          previewImage.classList.add('loaded');
-          console.log("Preview marked as loaded");
-        }, 1000);
-
+        // Better loading detection
         miniPreviewIframe.onload = function() {
           console.log("Iframe loaded successfully");
-          previewImage.classList.add('loaded');
+          // Wait for content to render
+          setTimeout(() => {
+            previewImage.classList.add('loaded');
+          }, 800);
         };
 
         miniPreviewIframe.onerror = function() {
           console.log("Iframe failed to load");
-          previewImage.classList.remove('loaded');
+          // Show fallback with domain info
+          const fallbackHtml = `
+            <html>
+              <head>
+                <meta name="viewport" content="width=device-width, initial-scale=1">
+                <style>
+                  body { 
+                    margin: 0; 
+                    padding: 20px; 
+                    font-family: Arial, sans-serif; 
+                    background: linear-gradient(135deg, #f0f0f0, #e0e0e0);
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    min-height: 100vh;
+                    text-align: center;
+                  }
+                  .preview-content { 
+                    background: white;
+                    padding: 30px;
+                    border-radius: 10px;
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+                    max-width: 400px;
+                  }
+                  h3 { color: #333; margin: 0 0 10px 0; font-size: 18px; }
+                  p { color: #666; margin: 5px 0; font-size: 14px; }
+                  .domain { 
+                    background: #f8f9fa; 
+                    padding: 8px 12px; 
+                    border-radius: 6px; 
+                    color: #495057;
+                    font-weight: 500;
+                    margin-top: 10px;
+                  }
+                </style>
+              </head>
+              <body>
+                <div class="preview-content">
+                  <h3>${title || 'Website Preview'}</h3>
+                  <div class="domain">${domain}</div>
+                  <p>Preview not available</p>
+                </div>
+              </body>
+            </html>
+          `;
+          
+          this.src = `data:text/html;charset=utf-8,${encodeURIComponent(fallbackHtml)}`;
+          setTimeout(() => {
+            previewImage.classList.add('loaded');
+          }, 300);
         };
+
+        // Timeout fallback
+        setTimeout(() => {
+          if (!previewImage.classList.contains('loaded')) {
+            console.log("Preview timeout, showing fallback");
+            const timeoutHtml = `
+              <html>
+                <body style="margin:0;padding:20px;font-family:Arial;background:#f5f5f5;display:flex;align-items:center;justify-content:center;min-height:100vh;">
+                  <div style="text-align:center;background:white;padding:30px;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,0.1);">
+                    <h3 style="color:#333;margin:0 0 10px 0;">${title || 'Loading...'}</h3>
+                    <p style="color:#666;margin:5px 0;">${domain}</p>
+                    <small style="color:#999;">Loading preview...</small>
+                  </div>
+                </body>
+              </html>
+            `;
+            miniPreviewIframe.src = `data:text/html;charset=utf-8,${encodeURIComponent(timeoutHtml)}`;
+            previewImage.classList.add('loaded');
+          }
+        }, 3000);
       }
       
     } catch (error) {
@@ -118,10 +182,26 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (siteTitle) siteTitle.textContent = "Invalid URL";
       if (siteDomain) siteDomain.textContent = "unknown";
       if (siteFavicon) siteFavicon.style.display = 'none';
+      
+      // Show error fallback
+      if (miniPreviewIframe) {
+        const errorHtml = `
+          <html>
+            <body style="margin:0;padding:20px;font-family:Arial;background:#ffebee;display:flex;align-items:center;justify-content:center;min-height:100vh;">
+              <div style="text-align:center;">
+                <h3 style="color:#c62828;margin:0 0 10px 0;">Invalid URL</h3>
+                <p style="color:#666;">Cannot preview this site</p>
+              </div>
+            </body>
+          </html>
+        `;
+        miniPreviewIframe.src = `data:text/html;charset=utf-8,${encodeURIComponent(errorHtml)}`;
+        previewImage.classList.add('loaded');
+      }
     }
   }
 
-  // Function to update preview time
+  // Function to update preview time (simplified)
   function updatePreview() {
     if (currentHours === 0 && currentMinutes === 0) {
       if (previewTime) previewTime.textContent = "Please set a delay time";
@@ -132,86 +212,177 @@ document.addEventListener("DOMContentLoaded", async () => {
     const reminderTime = new Date(
       now.getTime() + (currentHours * 60 + currentMinutes) * 60 * 1000
     );
-    if (previewTime) previewTime.textContent = reminderTime.toLocaleString();
-    
-    // Update timeline bar visual
-    updateTimelineBar(currentHours, currentMinutes);
-  }
-
-  // Function to update timeline bar visual
-  function updateTimelineBar(hours, minutes) {
-    if (slot && timeBar && label) {
-      const totalMinutes = hours * 60 + minutes;
-      const maxMinutes = 24 * 60; // 24 hours max
-      const percentage = Math.min(totalMinutes / maxMinutes, 1);
-      
-      // For slider handle: position it based on percentage
-      const maxLeft = slot.offsetWidth - timeBar.offsetWidth;
-      const newLeft = percentage * maxLeft;
-      timeBar.style.left = `${newLeft}px`;
-      
-      if (totalMinutes < 60) {
-        label.textContent = `${totalMinutes}m`;
-      } else {
-        label.textContent = `${hours}h ${minutes}m`;
-      }
+    if (previewTime) {
+      previewTime.textContent = reminderTime.toLocaleDateString() + " at " + 
+        reminderTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     }
   }
 
-  // Initial preview update
-  updatePreview();
+  // Initialize time picker (embedded)
+  function initTimePicker() {
+    if (!hoursWheel || !minutesWheel) {
+      console.error("Time picker wheels not found");
+      return;
+    }
 
-  // Timeline dragging functionality - only add if elements exist
-  if (timeBar && slot && label) {
-    timeBar.addEventListener("mousedown", (e) => {
-      isResizing = true;
-      timeBar.classList.add("dragging");
-      document.body.style.userSelect = "none";
-      e.preventDefault();
-    });
-
-    document.addEventListener("mousemove", (e) => {
-      if (!isResizing) return;
-
-      const slotRect = slot.getBoundingClientRect();
-      const handleWidth = timeBar.offsetWidth;
-      const maxLeft = slotRect.width - handleWidth;
-      const newLeft = Math.max(0, Math.min(maxLeft, e.clientX - slotRect.left - handleWidth / 2));
-      
-      // Calculate percentage based on handle position
-      const percentage = maxLeft > 0 ? newLeft / maxLeft : 0;
-      
-      // Calculate time based on percentage (max 24 hours)
-      const maxMinutes = 24 * 60;
-      const totalMinutes = Math.round(percentage * maxMinutes);
-      
-      // Snap to 5-minute intervals
-      const snappedMinutes = Math.round(totalMinutes / 5) * 5;
-      
-      currentHours = Math.floor(snappedMinutes / 60);
-      currentMinutes = snappedMinutes % 60;
-      
-      // Update handle position based on snapped time
-      const snappedPercentage = snappedMinutes / maxMinutes;
-      const snappedLeft = snappedPercentage * maxLeft;
-      timeBar.style.left = `${snappedLeft}px`;
-      
-      // Update label
-      if (snappedMinutes < 60) {
-        label.textContent = `${snappedMinutes}m`;
-      } else {
-        label.textContent = `${currentHours}h ${currentMinutes}m`;
+    // Generate hours with padding items above and below
+    const hoursItems = hoursWheel.querySelector('.wheel-items');
+    if (hoursItems) {
+      // Add padding items above (21, 22, 23)
+      for (let i = 21; i <= 23; i++) {
+        const item = document.createElement('div');
+        item.className = 'wheel-item padding-item';
+        item.textContent = i;
+        item.dataset.value = i;
+        hoursItems.appendChild(item);
       }
       
-      // Update preview
+      // Add main items (0-23)
+      for (let i = 0; i <= 23; i++) {
+        const item = document.createElement('div');
+        item.className = 'wheel-item';
+        item.textContent = i;
+        item.dataset.value = i;
+        hoursItems.appendChild(item);
+      }
+      
+      // Add padding items below (0, 1, 2)
+      for (let i = 0; i <= 2; i++) {
+        const item = document.createElement('div');
+        item.className = 'wheel-item padding-item';
+        item.textContent = i;
+        item.dataset.value = i;
+        hoursItems.appendChild(item);
+      }
+    }
+    
+    // Generate minutes with padding items above and below
+    const minutesItems = minutesWheel.querySelector('.wheel-items');
+    if (minutesItems) {
+      // Add padding items above (57, 58, 59)
+      for (let i = 57; i <= 59; i++) {
+        const item = document.createElement('div');
+        item.className = 'wheel-item padding-item';
+        item.textContent = i.toString().padStart(2, '0');
+        item.dataset.value = i;
+        minutesItems.appendChild(item);
+      }
+      
+      // Add main items (0-59)
+      for (let i = 0; i <= 59; i++) {
+        const item = document.createElement('div');
+        item.className = 'wheel-item';
+        item.textContent = i.toString().padStart(2, '0');
+        item.dataset.value = i;
+        minutesItems.appendChild(item);
+      }
+      
+      // Add padding items below (0, 1, 2)
+      for (let i = 0; i <= 2; i++) {
+        const item = document.createElement('div');
+        item.className = 'wheel-item padding-item';
+        item.textContent = i.toString().padStart(2, '0');
+        item.dataset.value = i;
+        minutesItems.appendChild(item);
+      }
+    }
+    
+    // Add scroll behavior with infinite loop support
+    setupWheelScroll(hoursWheel, (value) => {
+      currentHours = value;
       updatePreview();
-    });
+      console.log("Hours updated:", value);
+    }, 24, 3); // 24 main items, 3 padding items on each side
+    
+    setupWheelScroll(minutesWheel, (value) => {
+      currentMinutes = value;
+      updatePreview();
+      console.log("Minutes updated:", value);
+    }, 60, 3); // 60 main items, 3 padding items on each side
+  }
 
-    document.addEventListener("mouseup", () => {
-      isResizing = false;
-      timeBar.classList.remove("dragging");
-      document.body.style.userSelect = "auto";
+  function setupWheelScroll(wheel, callback, mainItemsCount, paddingCount) {
+    if (!wheel) return;
+    
+    const container = wheel.querySelector('.wheel-items');
+    if (!container) return;
+    
+    const items = container.querySelectorAll('.wheel-item');
+    
+    // Start at the first real item (after padding)
+    let currentIndex = paddingCount;
+    
+    function updateSelection(index) {
+      // Remove previous selection
+      items.forEach(item => item.classList.remove('center', 'selected'));
+      
+      // Add selection to current item
+      if (items[index]) {
+        items[index].classList.add('center', 'selected');
+        const value = parseInt(items[index].dataset.value);
+        callback(value);
+      }
+      
+      // Update transform - properly center the selected item
+      const itemHeight = 20;
+      const containerHeight = 60;
+      const centerPosition = Math.floor(containerHeight / 2) - Math.floor(itemHeight / 2);
+      const offset = centerPosition - (index * itemHeight);
+      container.style.transform = `translateY(${offset}px)`;
+      
+      // Handle infinite scroll repositioning
+      if (index < paddingCount) {
+        // Scrolled too far up, jump to equivalent position at the end
+        setTimeout(() => {
+          const equivalentIndex = mainItemsCount + index;
+          currentIndex = equivalentIndex;
+          const newOffset = centerPosition - (equivalentIndex * itemHeight);
+          container.style.transition = 'none';
+          container.style.transform = `translateY(${newOffset}px)`;
+          items.forEach(item => item.classList.remove('center', 'selected'));
+          items[equivalentIndex].classList.add('center', 'selected');
+          requestAnimationFrame(() => {
+            container.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+          });
+        }, 50);
+      } else if (index >= mainItemsCount + paddingCount) {
+        // Scrolled too far down, jump to equivalent position at the beginning
+        setTimeout(() => {
+          const equivalentIndex = paddingCount + (index - mainItemsCount - paddingCount);
+          currentIndex = equivalentIndex;
+          const newOffset = centerPosition - (equivalentIndex * itemHeight);
+          container.style.transition = 'none';
+          container.style.transform = `translateY(${newOffset}px)`;
+          items.forEach(item => item.classList.remove('center', 'selected'));
+          items[equivalentIndex].classList.add('center', 'selected');
+          requestAnimationFrame(() => {
+            container.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+          });
+        }, 50);
+      }
+    }
+    
+    // Click handlers
+    items.forEach((item, index) => {
+      item.addEventListener('click', () => {
+        currentIndex = index;
+        updateSelection(currentIndex);
+      });
     });
+    
+    // Wheel scroll with infinite looping
+    wheel.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      if (e.deltaY > 0) {
+        currentIndex++;
+      } else {
+        currentIndex--;
+      }
+      updateSelection(currentIndex);
+    });
+    
+    // Initialize at first real item (0 value)
+    updateSelection(currentIndex);
   }
 
   // Load folders into select dropdown
@@ -316,7 +487,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  // Remove the old folder select change handler since we don't need to clear input anymore
   // Clear new folder input when selecting existing folder - only add if elements exist
   if (folderSelect && newFolderInput) {
     folderSelect.addEventListener("change", () => {
@@ -331,23 +501,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     return Date.now().toString(36) + Math.random().toString(36).substr(2);
   }
 
-  // Load folders on startup
-  await loadFolders();
-
-  // Handle reminder setting
+  // Handle reminder setting with validation
   if (setReminderBtn) {
     setReminderBtn.addEventListener("click", async () => {
-      // Use current tab URL and title since inputs are removed
       const url = currentTabUrl;
       const customTitle = currentTabTitle;
       
-      // Get selected folder or create new one
       let selectedFolderId = folderSelect ? folderSelect.value : "";
       const newFolderName = newFolderInput && !newFolderInput.classList.contains('hidden') ? newFolderInput.value.trim() : "";
       
       if (!selectedFolderId && newFolderName) {
         selectedFolderId = await createFolder(newFolderName);
-        if (!selectedFolderId) return; // Failed to create folder
+        if (!selectedFolderId) return;
       }
 
       if (!url) {
@@ -356,14 +521,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
 
       if (currentHours === 0 && currentMinutes === 0) {
-        showError("Please set a delay time using the drag bar");
+        showError("Please set a delay time using the time picker");
         return;
       }
 
       try {
         await saveReminder(url, customTitle, currentHours, currentMinutes, selectedFolderId);
         
-        // Show success modal
         const timeText = currentHours > 0 ? 
           `${currentHours}h ${currentMinutes}m` : 
           `${currentMinutes}m`;
@@ -417,6 +581,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       window.close();
     });
   }
+
+  // Initialize everything
+  await loadFolders();
+  initTimePicker();
+  updatePreview();
+
+  console.log("Popup initialized successfully");
 });
 
 async function saveReminder(url, customTitle, hours, minutes, folderId = null) {
