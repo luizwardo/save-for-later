@@ -1,6 +1,6 @@
 body {
-  width: 400px;
-  height: 520px;
+  width: 380px;
+  height: 580px;
   padding: 16px;
   margin: 0;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
@@ -355,6 +355,13 @@ body {
   z-index: 2;
   display: block;
   pointer-events: none;
+  overflow: hidden;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.mini-preview::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Opera */
 }
 
 .preview-image.loaded::before {
@@ -410,10 +417,10 @@ body {
   margin-bottom: 4px;
 }
 
-/* Timeline Styling */
+/* Timeline Styling - Updated for embedded time picker */
 .timeline-section {
     margin: 12px 0;
-    padding: 14px;
+    padding: 12px;
     background: linear-gradient(135deg, rgba(176, 176, 176, 0.05), rgba(255, 255, 255, 0.02));
     border-radius: 12px;
     border: 2px solid rgba(176, 176, 176, 0.2);
@@ -421,85 +428,97 @@ body {
 }
 
 .timeline-section:hover {
-  border-color: rgba(176, 176, 176, 0.3);
-  transform: translateY(-1px);
+    border-color: rgba(176, 176, 176, 0.3);
+    transform: translateY(-1px);
 }
 
-.timeline-title {
-    font-size: 10px;
+/* Remove old timeline styles */
+.timeline-title,
+.timeline-bottom,
+#label,
+.custom-time-manual-btn {
+    display: none;
+}
+
+/* Embedded Time Picker Wheels - Smaller version */
+.time-picker-wheels {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.time-wheel {
+    flex: 1;
+    text-align: center;
+}
+
+.wheel-label {
+    font-size: 9px;
     color: #b0b0b0;
     text-transform: uppercase;
     letter-spacing: 1px;
-    margin-bottom: 10px;
+    margin-bottom: 6px;
     font-weight: 600;
 }
 
-#slot {
+.wheel-container {
+    height: 60px;
+    overflow: hidden;
     position: relative;
-    height: 8px !important;
-    background: linear-gradient(90deg, rgba(64, 64, 64, 0.3), rgba(176, 176, 176, 0.1));
-    border-radius: 6px;
-    cursor: pointer;
-    margin: 10px 0;
+    background: rgba(255, 255, 255, 0.02);
     border: 1px solid rgba(176, 176, 176, 0.2);
-}
-
-#time-bar {
-    position: absolute;
-    top: -6px;
-    left: 0;
-    width: 20px !important;
-    height: 20px !important;
-    background: linear-gradient(135deg, #b0b0b0, #ffffff) !important;
     border-radius: 6px;
-    cursor: grab;
-    transition: transform 0.2s ease;
 }
 
-#time-bar:hover {
-    transform: scale(1.15);
+.wheel-items {
+    position: relative;
+    transition: transform 0.3s ease;
 }
 
-#time-bar:active {
-    cursor: grabbing;
-    transform: scale(1.1);
-}
-
-#label {
-    font-size: 11px;
-    color: #b0b0b0;
-    text-align: center;
-    font-weight: 600;
-    background: linear-gradient(135deg, rgba(176, 176, 176, 0.1), rgba(255, 255, 255, 0.05));
-    padding: 6px 10px;
-    border-radius: 8px;
-    border: 2px solid rgba(176, 176, 176, 0.3);
-    min-width: 50px;
-    backdrop-filter: blur(10px);
-    flex: 1;
-    margin-right: 8px;
-}
-
-.timeline-bottom {
+.wheel-item {
+    height: 20px;
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-top: 10px;
-    gap: 8px;
+    justify-content: center;
+    font-size: 13px;
+    color: #888888;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-bottom: 1px solid rgba(176, 176, 176, 0.1);
+}
+
+.wheel-item:hover {
+    background: rgba(176, 176, 176, 0.1);
+}
+
+.wheel-item.selected {
+    color: #ffffff;
+    background: rgba(176, 176, 176, 0.2);
+    font-weight: 600;
+}
+
+.wheel-item.center {
+    color: #ffffff;
+    font-weight: 600;
+    background: rgba(176, 176, 176, 0.15);
+}
+
+/* Remove the selection indicator */
+.wheel-container::before {
+    display: none;
 }
 
 .reminder-preview-block {
-    padding: 6px 10px;
+    padding: 8px 12px;
     background: linear-gradient(135deg, rgba(176, 176, 176, 0.1), rgba(255, 255, 255, 0.05));
     border-radius: 8px;
     border: 2px solid rgba(176, 176, 176, 0.3);
     backdrop-filter: blur(10px);
-    flex: 1;
     text-align: center;
 }
 
 .reminder-preview-block span {
-    font-size: 10px;
+    font-size: 11px;
     color: #b0b0b0;
     font-weight: 600;
 }
@@ -700,7 +719,7 @@ body {
 }
 
 .modal-content {
-  background: linear-gradient(135deg, #2a2a2a, #1a1a1a);
+  background: linear-gradient(135deg, #2a2a2a, #1a1a2a);
   border-radius: 16px;
   padding: 24px;
   max-width: 320px;
@@ -810,4 +829,105 @@ body {
     opacity: 1;
     transform: scale(1) translateY(0);
   }
+}
+
+/* Time Picker Modal */
+.time-picker-content {
+    background: linear-gradient(135deg, #2a2a2a, #1a1a1a);
+    border-radius: 16px;
+    padding: 20px;
+    max-width: 280px;
+    width: 90%;
+    border: 2px solid rgba(176, 176, 176, 0.2);
+    backdrop-filter: blur(15px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+.time-picker-header h4 {
+    margin: 0 0 16px 0;
+    color: #ffffff;
+    font-size: 14px;
+    text-align: center;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.time-picker-wheels {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.time-wheel {
+    flex: 1;
+    text-align: center;
+}
+
+.wheel-label {
+    font-size: 10px;
+    color: #b0b0b0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.wheel-container {
+    height: 60px;
+    overflow: hidden;
+    position: relative;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(176, 176, 176, 0.2);
+    border-radius: 8px;
+}
+
+.wheel-items {
+    position: relative;
+    transition: transform 0.3s ease;
+}
+
+.wheel-item {
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    color: #888888;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-bottom: 1px solid rgba(176, 176, 176, 0.1);
+}
+
+.wheel-item:hover {
+    background: rgba(176, 176, 176, 0.1);
+}
+
+.wheel-item.selected {
+    color: #ffffff;
+    background: rgba(176, 176, 176, 0.2);
+    font-weight: 600;
+}
+
+.wheel-item.center {
+    color: #ffffff;
+    font-weight: 600;
+    background: rgba(176, 176, 176, 0.15);
+}
+
+/* Remove the selection indicator */
+.wheel-container::before {
+    display: none;
+}
+
+.time-picker-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.time-picker-actions .btn-primary,
+.time-picker-actions .btn-secondary {
+    flex: 1;
+    margin: 0;
 }
