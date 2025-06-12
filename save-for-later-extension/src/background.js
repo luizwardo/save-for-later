@@ -52,11 +52,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
         iconUrl: "assets/icon.png",
         title: "Save for Later Reminder",
         message: `Time to check: ${reminder.title}`,
-        buttons: [
-          { title: "Open Link" },
-          { title: "Configs" },
-          { title: "Dismiss" },
-        ],
+        buttons: [{ title: "Open Link" }, { title: "Dismiss" }],
       });
 
       // Mark reminder as triggered
@@ -65,8 +61,8 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
           ? { ...r, triggered: true, triggeredAt: new Date().toISOString() }
           : r
       );
-      await chrome.storage.local.set({ reminders: updatedReminders });
-    }
+       await chrome.storage.local.set({ reminders: updatedReminders });
+       }
   } catch (error) {
     console.error("Error handling alarm:", error);
   }
@@ -82,40 +78,11 @@ chrome.notifications.onButtonClicked.addListener(
       const reminder = reminders.find((r) => r.id === notificationId);
 
       if (reminder) {
-        switch (buttonIndex) {
-          case 0: // Open Link
-            await chrome.tabs.create({ url: reminder.url });
-            await chrome.notifications.clear(notificationId);
-            break;
-
-          case 1: // Configs
-            // Open the settings page
-            await chrome.tabs.create({
-              url: chrome.runtime.getURL("src/settings/settings.html"),
-            });
-            await chrome.notifications.clear(notificationId);
-            break;
-
-          case 2: // Dismiss
-            await chrome.notifications.clear(notificationId);
-            break;
-
-          default:
-            await chrome.notifications.clear(notificationId);
-            break;
+        if (buttonIndex === 0) {
+          // Open Link
+          await chrome.tabs.create({ url: reminder.url });
         }
-      } else {
-        // Handle test notifications or other notifications
-        switch (buttonIndex) {
-          case 0: // Test Button 1 or generic action
-            console.log("Test button 1 clicked");
-            break;
-          case 1: // Test Button 2 or configs
-            await chrome.tabs.create({
-              url: chrome.runtime.getURL("src/settings/settings.html"),
-            });
-            break;
-        }
+        // For both buttons, clear the notification
         await chrome.notifications.clear(notificationId);
       }
     } catch (error) {
@@ -133,14 +100,8 @@ chrome.notifications.onClicked.addListener(async (notificationId) => {
     const reminder = reminders.find((r) => r.id === notificationId);
 
     if (reminder) {
-      // Open the link when clicking the notification body
+      // Open the link
       await chrome.tabs.create({ url: reminder.url });
-      await chrome.notifications.clear(notificationId);
-    } else {
-      // For test notifications, open settings
-      await chrome.tabs.create({
-        url: chrome.runtime.getURL("src/settings/settings.html"),
-      });
       await chrome.notifications.clear(notificationId);
     }
   } catch (error) {

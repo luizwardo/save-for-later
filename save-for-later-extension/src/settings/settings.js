@@ -952,7 +952,7 @@ async function editReminder(reminder) {
 }
 
 async function deleteReminder(reminderId) {
-  try {
+   try {
     // Remove from storage
     const result = await chrome.storage.local.get(["reminders"]);
     const reminders = result.reminders || [];
