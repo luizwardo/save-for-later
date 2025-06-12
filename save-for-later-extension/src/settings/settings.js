@@ -311,6 +311,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Load all links
   async function loadAllLinks() {
+
+    const allLinksGrid = document.getElementById('allLinksGrid');
+    if (!allLinksGrid) {
+    console.warn('[loadAllLinks] allLinksGrid não existe nesta página. Ignorando.');
+    return;
+  }
+
     try {
       const result = await chrome.storage.local.get(["reminders"]);
       const reminders = result.reminders || [];
@@ -926,6 +933,9 @@ async function editReminder(reminder) {
   }
 
   try {
+    if (!reminder || !reminder.id) {
+      throw new Error("Invalid reminder data");
+    }
     // Calculate new reminder date based on delay from now
     const newDelayMs = (newHours * 60 + newMinutes) * 60 * 1000;
     const newDate = new Date(now.getTime() + newDelayMs);
@@ -933,6 +943,7 @@ async function editReminder(reminder) {
     // Update reminder
     const result = await chrome.storage.local.get(["reminders"]);
     const reminders = result.reminders || [];
+
     const updatedReminders = reminders.map((r) =>
       r.id === reminder.id ? { ...r, reminderDate: newDate.toISOString() } : r
     );
@@ -940,8 +951,14 @@ async function editReminder(reminder) {
     await chrome.storage.local.set({ reminders: updatedReminders });
 
     // Update alarm
-    await chrome.alarms.clear(reminder.id);
-    await chrome.alarms.create(reminder.id, { when: newDate.getTime() });
+    if (chrome.alarms && chrome.alarms.clear && chrome.alarms.create) {
+      await chrome.alarms.clear(reminder.id);
+      await chrome.alarms.create(reminder.id, { when: newDate.getTime() });
+    } else {
+      console.warn(
+        "Alarms API not available. Reminder will not trigger automatically."
+      );
+    }
 
     await loadReminders(); // Refresh the display
     showNotification("Reminder updated successfully", "success");
@@ -960,7 +977,11 @@ async function deleteReminder(reminderId) {
     await chrome.storage.local.set({ reminders: updatedReminders });
 
     // Clear alarm
-    await chrome.alarms.clear(reminderId);
+    if (chrome.alarms && chrome.alarms.clear) {
+      await chrome.alarms.clear(reminderId);
+    } else {
+      console.warn("Alarms API not available. Reminder will not trigger automatically.");
+    }
 
     // Clear any existing notification
     await chrome.notifications.clear(reminderId);
