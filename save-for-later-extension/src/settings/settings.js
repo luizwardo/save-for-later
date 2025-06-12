@@ -343,12 +343,27 @@ document.addEventListener("DOMContentLoaded", async () => {
       folderInfo = `<span class="folder-tag"> In folder</span>`;
     }
 
-    // Get domain for favicon
+    // Get domain for favicon with validation
     let domain = "";
+    let faviconHtml = "";
     try {
-      domain = new URL(link.url).hostname;
+      const urlObj = new URL(link.url);
+      domain = urlObj.hostname;
+      
+      // Better favicon validation
+      const isValidDomain = domain && 
+                           domain !== 'localhost' && 
+                           !domain.startsWith('127.') && 
+                           !domain.includes('extension') &&
+                           !domain.startsWith('chrome-') &&
+                           domain.includes('.') && 
+                           domain.length > 2;
+      
+      if (isValidDomain) {
+        faviconHtml = `<img class="site-favicon" src="https://www.google.com/s2/favicons?domain=${domain}&sz=18" alt="Favicon" onerror="this.style.display='none'; this.src=''; this.onerror=null;">`;
+      }
     } catch (e) {
-      domain = "unknown";
+      domain = "Invalid URL";
     }
 
     return `
@@ -356,11 +371,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         <div class="reminder-content">
           <div class="site-preview-section">
             <div class="preview-image">
-              <iframe class="mini-preview" src="${link.url}" sandbox="allow-same-origin" loading="lazy"></iframe>
             </div>
             <div class="site-info">
               <div class="site-header">
-                <img class="site-favicon" src="https://www.google.com/s2/favicons?domain=${domain}&sz=18" alt="Favicon" onerror="this.style.display='none'">
+                ${faviconHtml}
                 <span class="site-domain">${domain}</span>
               </div>
               <div class="reminder-title">${escapeHtml(link.title)}</div>
@@ -1024,3 +1038,90 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+
+function createReminderCard(reminder) {
+  const card = document.createElement('div');
+  card.className = 'reminder-item';
+  card.dataset.id = reminder.id;
+  
+  try {
+    const urlObj = new URL(reminder.url);
+    const domain = urlObj.hostname;
+    
+    // Better favicon validation
+    const isValidDomain = domain && 
+                         domain !== 'localhost' && 
+                         !domain.startsWith('127.') && 
+                         !domain.includes('extension') &&
+                         !domain.startsWith('chrome-') &&
+                         domain.includes('.') && 
+                         domain.length > 2;
+    
+    const faviconUrl = isValidDomain ? 
+      `https://www.google.com/s2/favicons?domain=${domain}&sz=18` : '';
+    
+    card.innerHTML = `
+      <div class="reminder-content">
+        <div class="site-preview-section">
+          <div class="preview-image"></div>
+          <div class="site-info">
+            <div class="site-header">
+              ${isValidDomain ? `<img class="site-favicon" src="${faviconUrl}" alt="Favicon" onerror="this.style.display='none'; this.src=''; this.onerror=null;">` : ''}
+              <span class="site-domain">${domain || 'Unknown'}</span>
+            </div>
+            <div class="reminder-title">${reminder.title}</div>
+            <div class="reminder-url">${reminder.url}</div>
+          </div>
+        </div>
+        
+        <div class="reminder-date">${formatReminderDate(reminder.reminderDate)}</div>
+        
+        <div class="reminder-status">
+          <span class="status-badge ${getStatusClass(reminder)}">
+            ${getStatusText(reminder)}
+          </span>
+          ${reminder.folderId ? `<span class="folder-tag">Folder: ${getFolderName(reminder.folderId)}</span>` : ''}
+        </div>
+        
+        <div class="reminder-actions">
+          <button class="action-btn primary" onclick="openReminder('${reminder.id}')">Open</button>
+          <button class="action-btn danger" onclick="deleteReminder('${reminder.id}')">Delete</button>
+        </div>
+      </div>
+    `;
+    
+    // Remove iframe code to prevent X-Frame-Options errors
+    
+  } catch (error) {
+    console.error('Error creating reminder card:', error);
+    // Fallback for invalid URLs
+    card.innerHTML = `
+      <div class="reminder-content">
+        <div class="site-preview-section">
+          <div class="preview-image"></div>
+          <div class="site-info">
+            <div class="site-header">
+              <span class="site-domain">Invalid URL</span>
+            </div>
+            <div class="reminder-title">${reminder.title}</div>
+            <div class="reminder-url">${reminder.url}</div>
+          </div>
+        </div>
+        
+        <div class="reminder-date">${formatReminderDate(reminder.reminderDate)}</div>
+        
+        <div class="reminder-status">
+          <span class="status-badge ${getStatusClass(reminder)}">
+            ${getStatusText(reminder)}
+          </span>
+        </div>
+        
+        <div class="reminder-actions">
+          <button class="action-btn danger" onclick="deleteReminder('${reminder.id}')">Delete</button>
+        </div>
+      </div>
+    `;
+  }
+  
+  return card;
+}

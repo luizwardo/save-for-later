@@ -41,162 +41,71 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.error("Error getting current tab:", error);
   }
 
-  // Function to load site preview
+  // Function to load site preview (simplified - no iframe)
   function loadSitePreview(url, title) {
     const siteTitle = document.getElementById("site-title");
     const siteDomain = document.getElementById("site-domain");
     const siteFavicon = document.getElementById("site-favicon");
-    const miniPreviewIframe = document.getElementById("mini-preview-iframe");
-    const previewImage = document.querySelector(".preview-image");
 
     console.log("Loading site preview for:", url);
 
     try {
+      // Skip chrome:// URLs and extension URLs
+      if (url.startsWith('chrome://') || url.startsWith('chrome-extension://') || url.startsWith('moz-extension://')) {
+        console.log("Skipping chrome/extension URL:", url);
+        if (siteTitle) siteTitle.textContent = title || "Browser Page";
+        if (siteDomain) siteDomain.textContent = "Internal";
+        if (siteFavicon) siteFavicon.style.display = 'none';
+        return;
+      }
+
       const urlObj = new URL(url);
       const domain = urlObj.hostname;
 
       // Update preview info
       if (siteTitle) {
         siteTitle.textContent = title || "Untitled";
-        console.log("Set title:", title);
       }
       if (siteDomain) {
         siteDomain.textContent = domain;
-        console.log("Set domain:", domain);
       }
       
-      // Handle favicon
+      // Handle favicon with better validation
       if (siteFavicon) {
-        const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=16`;
-        siteFavicon.src = faviconUrl;
-        siteFavicon.style.display = 'block';
-        console.log("Loading favicon:", faviconUrl);
-        
-        siteFavicon.onerror = function() {
-          console.log("Favicon failed to load");
-          this.style.display = 'none';
-        };
-        siteFavicon.onload = function() {
-          console.log("Favicon loaded successfully");
-        };
-      }
+        // Check if domain is valid and not localhost/extension
+        const isValidDomain = domain && 
+                             domain !== 'localhost' && 
+                             !domain.startsWith('127.') && 
+                             !domain.includes('extension') &&
+                             domain.includes('.') && 
+                             domain.length > 2;
 
-      // Handle iframe preview with better scaling for 120x100px
-      if (miniPreviewIframe && previewImage) {
-        console.log("Setting up iframe preview");
-        
-        // Remove sandbox to allow better loading
-        miniPreviewIframe.removeAttribute('sandbox');
-        
-        // Set iframe to load the website
-        miniPreviewIframe.src = url;
-        miniPreviewIframe.style.display = 'block';
-        
-        // Better loading detection
-        miniPreviewIframe.onload = function() {
-          console.log("Iframe loaded successfully");
-          // Wait for content to render
-          setTimeout(() => {
-            previewImage.classList.add('loaded');
-          }, 800);
-        };
-
-        miniPreviewIframe.onerror = function() {
-          console.log("Iframe failed to load");
-          // Show fallback with domain info
-          const fallbackHtml = `
-            <html>
-              <head>
-                <meta name="viewport" content="width=device-width, initial-scale=1">
-                <style>
-                  body { 
-                    margin: 0; 
-                    padding: 20px; 
-                    font-family: Arial, sans-serif; 
-                    background: linear-gradient(135deg, #f0f0f0, #e0e0e0);
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: center;
-                    min-height: 100vh;
-                    text-align: center;
-                  }
-                  .preview-content { 
-                    background: white;
-                    padding: 30px;
-                    border-radius: 10px;
-                    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-                    max-width: 400px;
-                  }
-                  h3 { color: #333; margin: 0 0 10px 0; font-size: 18px; }
-                  p { color: #666; margin: 5px 0; font-size: 14px; }
-                  .domain { 
-                    background: #f8f9fa; 
-                    padding: 8px 12px; 
-                    border-radius: 6px; 
-                    color: #495057;
-                    font-weight: 500;
-                    margin-top: 10px;
-                  }
-                </style>
-              </head>
-              <body>
-                <div class="preview-content">
-                  <h3>${title || 'Website Preview'}</h3>
-                  <div class="domain">${domain}</div>
-                  <p>Preview not available</p>
-                </div>
-              </body>
-            </html>
-          `;
+        if (isValidDomain) {
+          const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=16`;
+          siteFavicon.src = faviconUrl;
+          siteFavicon.style.display = 'block';
           
-          this.src = `data:text/html;charset=utf-8,${encodeURIComponent(fallbackHtml)}`;
-          setTimeout(() => {
-            previewImage.classList.add('loaded');
-          }, 300);
-        };
-
-        // Timeout fallback
-        setTimeout(() => {
-          if (!previewImage.classList.contains('loaded')) {
-            console.log("Preview timeout, showing fallback");
-            const timeoutHtml = `
-              <html>
-                <body style="margin:0;padding:20px;font-family:Arial;background:#f5f5f5;display:flex;align-items:center;justify-content:center;min-height:100vh;">
-                  <div style="text-align:center;background:white;padding:30px;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,0.1);">
-                    <h3 style="color:#333;margin:0 0 10px 0;">${title || 'Loading...'}</h3>
-                    <p style="color:#666;margin:5px 0;">${domain}</p>
-                    <small style="color:#999;">Loading preview...</small>
-                  </div>
-                </body>
-              </html>
-            `;
-            miniPreviewIframe.src = `data:text/html;charset=utf-8,${encodeURIComponent(timeoutHtml)}`;
-            previewImage.classList.add('loaded');
-          }
-        }, 3000);
+          siteFavicon.onerror = function() {
+            console.log("Favicon failed for domain:", domain);
+            this.style.display = 'none';
+            this.src = '';
+            this.onerror = null; // Prevent multiple error calls
+          };
+        } else {
+          console.log("Invalid domain for favicon:", domain);
+          siteFavicon.style.display = 'none';
+          siteFavicon.src = '';
+        }
       }
       
     } catch (error) {
       console.error("Error loading site preview:", error);
-      if (siteTitle) siteTitle.textContent = "Invalid URL";
-      if (siteDomain) siteDomain.textContent = "unknown";
-      if (siteFavicon) siteFavicon.style.display = 'none';
       
-      // Show error fallback
-      if (miniPreviewIframe) {
-        const errorHtml = `
-          <html>
-            <body style="margin:0;padding:20px;font-family:Arial;background:#ffebee;display:flex;align-items:center;justify-content:center;min-height:100vh;">
-              <div style="text-align:center;">
-                <h3 style="color:#c62828;margin:0 0 10px 0;">Invalid URL</h3>
-                <p style="color:#666;">Cannot preview this site</p>
-              </div>
-            </body>
-          </html>
-        `;
-        miniPreviewIframe.src = `data:text/html;charset=utf-8,${encodeURIComponent(errorHtml)}`;
-        previewImage.classList.add('loaded');
+      if (siteTitle) siteTitle.textContent = title || "Invalid URL";
+      if (siteDomain) siteDomain.textContent = "unknown";
+      if (siteFavicon) {
+        siteFavicon.style.display = 'none';
+        siteFavicon.src = '';
       }
     }
   }
