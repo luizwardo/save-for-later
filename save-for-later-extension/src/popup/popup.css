@@ -342,36 +342,6 @@ body {
   color: #666666;
 }
 
-.mini-preview {
-  width: 600px;
-  height: 500px;
-  border: none;
-  transform: scale(0.2);
-  transform-origin: top left;
-  background: white;
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 2;
-  display: block;
-  pointer-events: none;
-  overflow: hidden;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE/Edge */
-}
-
-.mini-preview::-webkit-scrollbar {
-  display: none; /* Chrome/Safari/Opera */
-}
-
-.preview-image.loaded::before {
-  display: none;
-}
-
-.preview-image.loaded {
-  background: white;
-}
-
 .site-info {
   flex: 1;
   min-width: 0;
