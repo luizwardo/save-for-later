@@ -46,6 +46,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const siteTitle = document.getElementById("site-title");
     const siteDomain = document.getElementById("site-domain");
     const siteFavicon = document.getElementById("site-favicon");
+    const previewImage = document.getElementById("preview-image");
 
     console.log("Loading site preview for:", url);
 
@@ -56,6 +57,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (siteTitle) siteTitle.textContent = title || "Browser Page";
         if (siteDomain) siteDomain.textContent = "Internal";
         if (siteFavicon) siteFavicon.style.display = 'none';
+        if (previewImage) {
+          previewImage.src = '';
+          previewImage.style.display = 'none';
+        }
         return;
       }
 
@@ -70,6 +75,34 @@ document.addEventListener("DOMContentLoaded", async () => {
         siteDomain.textContent = domain;
       }
       
+      if (previewImage) {
+        // Use a placeholder image for unsupported URLs
+        fetch(`https://api.microlink.io/?url=${encodeURIComponent(url)}`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.status !== 'success') return;
+
+      const { title, image } = data.data;
+
+      const titleEl = document.getElementById("site-title");
+      const imageEl = document.getElementById("preview-image");
+
+      if (title && titleEl) titleEl.textContent = title;
+      if (image?.url && imageEl) {
+        imageEl.src = image.url;
+        imageEl.style.display = 'block';
+      }
+    })
+    .catch(err => {
+      console.error("Erro ao buscar preview:", err);
+      if (previewImage) {
+        previewImage.src = '';
+        previewImage.style.display = 'none';
+      }
+    });
+}
+        
+
       // Handle favicon with better validation
       if (siteFavicon) {
         // Check if domain is valid and not localhost/extension
@@ -95,7 +128,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           console.log("Invalid domain for favicon:", domain);
           siteFavicon.style.display = 'none';
           siteFavicon.src = '';
-        }
+        } 
       }
       
     } catch (error) {
