@@ -309,106 +309,69 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // Load all links
-  async function loadAllLinks() {
-
-    const allLinksGrid = document.getElementById('allLinksGrid');
-    if (!allLinksGrid) {
-    console.warn('[loadAllLinks] allLinksGrid não existe nesta página. Ignorando.');
-    return;
-  }
-
+  // Update reminder counts
+  async function updateReminderCounts() {
     try {
       const result = await chrome.storage.local.get(["reminders"]);
       const reminders = result.reminders || [];
 
-      const allLinksGrid = document.getElementById("all-links-grid");
-      if (allLinksGrid) {
-        if (reminders.length === 0) {
-          allLinksGrid.innerHTML = '<div class="empty-state">No links saved yet</div>';
-        } else {
-          const linksHTML = reminders.map((link) => createLinkHTML(link)).join("");
-          allLinksGrid.innerHTML = linksHTML;
-        }
+      console.log("Updating counts, total reminders:", reminders.length);
+
+      const now = new Date();
+      const upcomingCount = reminders.filter((r) => new Date(r.reminderDate) > now && !r.triggered).length;
+
+      // More specific selectors and debugging
+      const allLinksCount = document.querySelector('[data-section="all-links"] .nav-count');
+      const remindersCount = document.querySelector('[data-section="reminders"] .nav-count');
+
+      console.log("All links element found:", !!allLinksCount);
+      console.log("Reminders element found:", !!remindersCount);
+
+      if (allLinksCount) {
+        allLinksCount.textContent = reminders.length;
+        console.log("Updated all links count to:", reminders.length);
+      } else {
+        console.warn("All links count element not found");
       }
+      
+      if (remindersCount) {
+        remindersCount.textContent = upcomingCount;
+        console.log("Updated reminders count to:", upcomingCount);
+      } else {
+        console.warn("Reminders count element not found");
+      }
+
+      // Also update folder counts
+      await updateFolderCounts();
     } catch (error) {
-      console.error("Error loading all links:", error);
+      console.error("Error updating counts:", error);
     }
   }
 
-  // Create link HTML for reminder-style display
-  function createLinkHTML(link) {
-    const reminderDate = new Date(link.reminderDate);
-    const createdDate = new Date(link.createdAt);
-    const now = new Date();
-    const isPast = reminderDate <= now;
-    const status = link.triggered ? "Completed" : isPast ? "Overdue" : "Scheduled";
-    
-    // Get folder name if it exists
-    let folderInfo = "";
-    if (link.folderId) {
-      folderInfo = `<span class="folder-tag"> In folder</span>`;
-    }
-
-    // Get domain for favicon with validation
-    let domain = "";
-    let faviconHtml = "";
+  // New function to update folder counts specifically
+  async function updateFolderCounts() {
     try {
-      const urlObj = new URL(link.url);
-      domain = urlObj.hostname;
-      
-      // Better favicon validation
-      const isValidDomain = domain && 
-                           domain !== 'localhost' && 
-                           !domain.startsWith('127.') && 
-                           !domain.includes('extension') &&
-                           !domain.startsWith('chrome-') &&
-                           domain.includes('.') && 
-                           domain.length > 2;
-      
-      if (isValidDomain) {
-        faviconHtml = `<img class="site-favicon" src="https://www.google.com/s2/favicons?domain=${domain}&sz=18" alt="Favicon" onerror="this.style.display='none'; this.src=''; this.onerror=null;">`;
-      }
-    } catch (e) {
-      domain = "Invalid URL";
-    }
+      const result = await chrome.storage.local.get(["folders", "reminders"]);
+      const folders = result.folders || [];
+      const reminders = result.reminders || [];
 
-    return `
-      <div class="reminder-item" data-id="${link.id}">
-        <div class="reminder-content">
-          <div class="site-preview-section">
-            <div class="preview-image">
-            </div>
-            <div class="site-info">
-              <div class="site-header">
-                ${faviconHtml}
-                <span class="site-domain">${domain}</span>
-              </div>
-              <div class="reminder-title">${escapeHtml(link.title)}</div>
-              <div class="reminder-url">${escapeHtml(link.url)}</div>
-            </div>
-          </div>
-          <div class="reminder-date">
-            Created: ${createdDate.toLocaleDateString()} at ${createdDate.toLocaleTimeString(
-              [],
-              { hour: "2-digit", minute: "2-digit" }
-            )}<br>
-            Reminder: ${reminderDate.toLocaleDateString()} at ${reminderDate.toLocaleTimeString(
-              [],
-              { hour: "2-digit", minute: "2-digit" }
-            )}
-          </div>
-          <div class="reminder-status">
-            <span class="status-badge ${status.toLowerCase()}">${status}</span>
-            ${folderInfo}
-          </div>
-        </div>
-        <div class="reminder-actions">
-          <button class="action-btn primary" data-action="open" data-url="${link.url}">Open Link</button>
-          <button class="action-btn danger" data-action="delete" data-id="${link.id}">Delete</button>
-        </div>
-      </div>
-    `;
+      const folderCounts = {};
+      reminders.forEach((reminder) => {
+        if (reminder.folderId) {
+          folderCounts[reminder.folderId] = (folderCounts[reminder.folderId] || 0) + 1;
+        }
+      });
+
+      // Update each folder count
+      folders.forEach(folder => {
+        const folderCountElement = document.querySelector(`[data-folder-id="${folder.id}"] .nav-count`);
+        if (folderCountElement) {
+          folderCountElement.textContent = folderCounts[folder.id] || 0;
+        }
+      });
+    } catch (error) {
+      console.error("Error updating folder counts:", error);
+    }
   }
 
   // Add event listeners for link actions
@@ -443,7 +406,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           if (linkId && confirm("Are you sure you want to delete this reminder?")) {
             await deleteReminder(linkId);
             
-            // Refresh all displays
+            // Refresh all displays and update counts
             await loadAllLinks();
             await loadFolders();
             await updateReminderCounts();
@@ -460,14 +423,76 @@ document.addEventListener("DOMContentLoaded", async () => {
           break;
 
         case "delete-folder":
-          if (folderId && confirm("Are you sure you want to delete this folder? All links in this folder will be deleted.")) {
-            await deleteFolder(folderId);
+          if (folderId) {
+            const result = await chrome.storage.local.get(["folders"]);
+            const folders = result.folders || [];
+            const folder = folders.find(f => f.id === folderId);
+            
+            if (folder && confirm(`Are you sure you want to delete the folder "${folder.name}"? All links in this folder will be moved back to the main list.`)) {
+              await deleteFolder(folderId);
+            }
           }
           break;
       }
     } catch (error) {
       console.error("Error handling link action:", error);
       showNotification("Failed to perform action", "error");
+    }
+  }
+
+  // Generate unique ID
+  function generateId() {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+  }
+
+  // Load logs
+  function loadLogs() {
+    const logsContainer = document.getElementById("activity-logs");
+    if (logsContainer) {
+      logsContainer.innerHTML = '<div class="empty-state">No activity logs available</div>';
+    }
+  }
+
+  // Load folder content
+  async function loadFolderContent(folderId) {
+    try {
+      const result = await chrome.storage.local.get(["folders", "reminders"]);
+      const folders = result.folders || [];
+      const reminders = result.reminders || [];
+
+      const folder = folders.find((f) => f.id === folderId);
+      if (!folder) return;
+
+      const folderLinks = reminders.filter((r) => r.folderId === folderId);
+
+      const folderTitle = document.getElementById("folder-title");
+      if (folderTitle) {
+        folderTitle.innerHTML = `
+          <div class="folder-header">
+            <h2>${escapeHtml(folder.name)}</h2>
+            <div class="folder-actions">
+              <button class="action-btn secondary" data-action="edit-folder" data-folder-id="${folder.id}">
+                Edit Name
+              </button>
+              <button class="action-btn danger" data-action="delete-folder" data-folder-id="${folder.id}">
+                Delete Folder
+              </button>
+            </div>
+          </div>
+        `;
+      }
+
+      const folderLinksGrid = document.getElementById("folder-links-grid");
+      if (folderLinksGrid) {
+        if (folderLinks.length === 0) {
+          folderLinksGrid.innerHTML = '<div class="empty-state">This folder is empty</div>';
+        } else {
+          const linksHTML = folderLinks.map((link) => createLinkHTML(link)).join("");
+          folderLinksGrid.innerHTML = linksHTML;
+        }
+      }
+    } catch (error) {
+      console.error("Error loading folder content:", error);
     }
   }
 
@@ -550,82 +575,238 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // Load folder content
-  async function loadFolderContent(folderId) {
-    try {
-      const result = await chrome.storage.local.get(["folders", "reminders"]);
-      const folders = result.folders || [];
-      const reminders = result.reminders || [];
-
-      const folder = folders.find((f) => f.id === folderId);
-      if (!folder) return;
-
-      const folderLinks = reminders.filter((r) => r.folderId === folderId);
-
-      const folderTitle = document.getElementById("folder-title");
-      if (folderTitle) {
-        folderTitle.textContent = folder.name;
-      }
-
-      // Update header actions with folder management buttons
-      const headerActions = document.querySelector("#folder-content-section .header-actions");
-      if (headerActions) {
-        headerActions.innerHTML = `
-          <button class="action-btn" data-action="edit-folder" data-folder-id="${folderId}">Edit</button>
-          <button class="action-btn danger" data-action="delete-folder" data-folder-id="${folderId}">Delete</button>
-        `;
-      }
-
-      const folderLinksGrid = document.getElementById("folder-links-grid");
-      if (folderLinksGrid) {
-        if (folderLinks.length === 0) {
-          folderLinksGrid.innerHTML = '<div class="empty-state">This folder is empty</div>';
-        } else {
-          const linksHTML = folderLinks.map((link) => createLinkHTML(link)).join("");
-          folderLinksGrid.innerHTML = linksHTML;
-        }
-      }
-    } catch (error) {
-      console.error("Error loading folder content:", error);
-    }
-  }
-
-  // Load logs
-  function loadLogs() {
-    const logsContainer = document.getElementById("activity-logs");
-    if (logsContainer) {
-      logsContainer.innerHTML = '<div class="empty-state">No activity logs available</div>';
-    }
-  }
-
-  // Update reminder counts
-  async function updateReminderCounts() {
+  // Load all links - UPDATE to include counter update
+  async function loadAllLinks() {
     try {
       const result = await chrome.storage.local.get(["reminders"]);
       const reminders = result.reminders || [];
 
-      const now = new Date();
-      const upcomingCount = reminders.filter((r) => new Date(r.reminderDate) > now && !r.triggered).length;
+      const allLinksGrid = document.getElementById("all-links-grid");
+      if (!allLinksGrid) {
+        console.warn('[loadAllLinks] all-links-grid element not found on this page. Ignoring.');
+        return;
+      }
 
-      const allLinksCount = document.querySelector('[data-section="all-links"] .nav-count');
-      const remindersCount = document.querySelector('[data-section="reminders"] .nav-count');
+      if (reminders.length === 0) {
+        allLinksGrid.innerHTML = '<div class="empty-state">No links saved yet</div>';
+      } else {
+        const linksHTML = reminders.map((link) => createLinkHTML(link)).join("");
+        allLinksGrid.innerHTML = linksHTML;
+      }
 
-      if (allLinksCount) allLinksCount.textContent = reminders.length;
-      if (remindersCount) remindersCount.textContent = upcomingCount;
+      // Update counts after loading
+      await updateReminderCounts();
     } catch (error) {
-      console.error("Error updating counts:", error);
+      console.error("Error loading all links:", error);
     }
   }
 
-  // Generate unique ID
-  function generateId() {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+  // Create link HTML for reminder-style display
+  function createLinkHTML(link) {
+    const reminderDate = new Date(link.reminderDate);
+    const createdDate = new Date(link.createdAt);
+    const now = new Date();
+    const isPast = reminderDate <= now;
+    const status = link.triggered ? "Completed" : isPast ? "Overdue" : "Scheduled";
+    
+    // Get folder name if it exists
+    let folderInfo = "";
+    if (link.folderId) {
+      folderInfo = `<span class="folder-tag"> In folder</span>`;
+    }
+
+    // Get domain for favicon with validation
+    let domain = "";
+    let faviconHtml = "";
+    
+    try {
+      const urlObj = new URL(link.url);
+      domain = urlObj.hostname;
+      
+      // Better favicon validation
+      const isValidDomain = domain && 
+                           domain !== 'localhost' && 
+                           !domain.startsWith('127.') && 
+                           !domain.includes('extension') &&
+                           !domain.startsWith('chrome-') &&
+                           domain.includes('.') && 
+                           domain.length > 2;
+      
+      if (isValidDomain) {
+        faviconHtml = `<img class="site-favicon" src="https://www.google.com/s2/favicons?domain=${domain}&sz=18" alt="Favicon" onerror="this.style.display='none';">`;
+      }
+    } catch (e) {
+      domain = "Invalid URL";
+    }
+
+    const cardId = `card-${link.id}`;
+
+    const html = `
+      <div class="reminder-item" data-id="${link.id}" id="${cardId}">
+        <div class="site-preview-section">
+          <div class="preview-image" id="preview-${link.id}" style="background: #2a2a2a; display: flex; align-items: center; justify-content: center; color: #666; font-size: 12px;">
+            <span>Loading...</span>
+          </div>
+          <div class="card-overlay">
+            <div class="overlay-content">
+              <div class="reminder-title" id="title-${link.id}">${escapeHtml(link.title)}</div>
+              <div class="reminder-actions">
+                <button class="action-btn primary" data-action="open" data-url="${link.url}">Open Link</button>
+                <button class="action-btn danger" data-action="delete" data-id="${link.id}">Delete</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Load site preview after creating the HTML
+    setTimeout(() => {
+      loadSitePreviewForCard(link.url, link.title, link.id);
+    }, 100);
+
+    return html;
   }
 
-  // Initialize everything
+  // Modified loadSitePreview to work with specific card IDs
+  function loadSitePreviewForCard(url, title, linkId) {
+    console.log("Loading site preview for card:", linkId, url);
+
+    try {
+      // Skip chrome:// URLs and extension URLs
+      if (url.startsWith('chrome://') || url.startsWith('chrome-extension://') || url.startsWith('moz-extension://')) {
+        console.log("Skipping chrome/extension URL:", url);
+        const previewElement = document.getElementById(`preview-${linkId}`);
+        if (previewElement) {
+          previewElement.innerHTML = '<span style="color: #888;">Internal Page</span>';
+        }
+        return;
+      }
+
+      const urlObj = new URL(url);
+      const domain = urlObj.hostname;
+
+      // Try to fetch preview image using microlink API
+      fetch(`https://api.microlink.io/?url=${encodeURIComponent(url)}`)
+        .then(res => res.json())
+        .then(data => {
+          console.log("Microlink API response:", data);
+          
+          const previewElement = document.getElementById(`preview-${linkId}`);
+          const titleElement = document.getElementById(`title-${linkId}`);
+          
+          if (data.status === 'success' && data.data) {
+            const { title: fetchedTitle, image } = data.data;
+
+            // Update title if we got a better one
+            if (fetchedTitle && titleElement && fetchedTitle.trim().length > 0) {
+              titleElement.textContent = fetchedTitle;
+            }
+            
+            // Update preview image - usando background-image para melhor controle
+            if (image?.url && previewElement) {
+              previewElement.style.backgroundImage = `url("${image.url}")`;
+              previewElement.style.backgroundSize = 'cover';
+              previewElement.style.backgroundPosition = 'center';
+              previewElement.innerHTML = '';
+            } else if (previewElement) {
+              previewElement.innerHTML = '<span style="color: #888;">No Preview</span>';
+            }
+          } else {
+            // Fallback if API fails
+            if (previewElement) {
+              previewElement.innerHTML = '<span style="color: #888;">No Preview</span>';
+            }
+          }
+        })
+        .catch(err => {
+          console.error("Error fetching preview for", url, ":", err);
+          const previewElement = document.getElementById(`preview-${linkId}`);
+          if (previewElement) {
+            previewElement.innerHTML = '<span style="color: #888;">Preview Failed</span>';
+          }
+        });
+    } catch (error) {
+      console.error("Error in loadSitePreviewForCard:", error);
+      const previewElement = document.getElementById(`preview-${linkId}`);
+      if (previewElement) {
+        previewElement.innerHTML = '<span style="color: #888;">Error</span>';
+      }
+    }
+  }
+
+  // Load preview images for reminders
+  function loadReminderPreview(url, reminderId) {
+    console.log("Loading preview for reminder:", reminderId, url);
+    
+    try {
+      // Skip chrome:// URLs and extension URLs
+      if (url.startsWith('chrome://') || url.startsWith('chrome-extension://') || url.startsWith('moz-extension://')) {
+        console.log("Skipping chrome/extension URL:", url);
+        const previewElement = document.getElementById(`reminder-preview-${reminderId}`);
+        if (previewElement) {
+          previewElement.innerHTML = '<div class="no-preview">Internal Page</div>';
+        }
+        return;
+      }
+
+      // Try to fetch preview image using microlink API
+      fetch(`https://api.microlink.io/?url=${encodeURIComponent(url)}`)
+        .then(res => res.json())
+        .then(data => {
+          console.log("Microlink API response for reminder:", data);
+          
+          const previewElement = document.getElementById(`reminder-preview-${reminderId}`);
+          
+          if (data.status === 'success' && data.data && data.data.image && data.data.image.url) {
+            // Get time badge to preserve it
+            const timeBadge = previewElement.querySelector('.reminder-time-badge');
+            const timeBadgeHtml = timeBadge ? timeBadge.outerHTML : '';
+            
+            // Set background image
+            previewElement.style.backgroundImage = `url("${data.data.image.url}")`;
+            previewElement.style.backgroundSize = 'cover';
+            previewElement.style.backgroundPosition = 'center';
+            
+            // Keep the time badge if it existed
+            if (timeBadgeHtml) {
+              previewElement.innerHTML = timeBadgeHtml;
+            } else {
+              previewElement.innerHTML = '';
+            }
+          } else {
+            // No image available in the API response
+            if (previewElement) {
+              const timeBadge = previewElement.querySelector('.reminder-time-badge');
+              const timeBadgeHtml = timeBadge ? timeBadge.outerHTML : '';
+              previewElement.innerHTML = `${timeBadgeHtml}<div class="no-preview">No Preview</div>`;
+            }
+          }
+        })
+        .catch(err => {
+          console.error("Error fetching preview for reminder", reminderId, ":", err);
+          const previewElement = document.getElementById(`reminder-preview-${reminderId}`);
+          if (previewElement) {
+            const timeBadge = previewElement.querySelector('.reminder-time-badge');
+            const timeBadgeHtml = timeBadge ? timeBadge.outerHTML : '';
+            previewElement.innerHTML = `${timeBadgeHtml}<div class="no-preview">Preview Failed</div>`;
+          }
+        });
+    } catch (error) {
+      console.error("Error in loadReminderPreview:", error);
+      const previewElement = document.getElementById(`reminder-preview-${reminderId}`);
+      if (previewElement) {
+        const timeBadge = previewElement.querySelector('.reminder-time-badge');
+        const timeBadgeHtml = timeBadge ? timeBadge.outerHTML : '';
+        previewElement.innerHTML = `${timeBadgeHtml}<div class="no-preview">Error</div>`;
+      }
+    }
+  }
+
+  // Initialize everything - UPDATE to add missing calls
   initSidebarNavigation();
   initFolderManagement();
-  addLinkEventListeners(); // Add this line
+  addLinkEventListeners();
   await loadFolders();
   await updateReminderCounts();
 
@@ -634,6 +815,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (allLinksNav) {
     switchToSection("all-links", allLinksNav);
   }
+
+  // Ensure counts are updated after everything is loaded
+  setTimeout(async () => {
+    await updateReminderCounts();
+  }, 500);
 
   // Initialize debug info on load
   async function initDebugInfo() {
@@ -700,6 +886,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Load and display reminders
   await loadReminders();
+  
+  // Initialize reminder filters
+  initReminderFilters();
 });
 
 async function loadReminders() {
@@ -734,19 +923,21 @@ async function loadReminders() {
 function displayReminders(reminders, container, type) {
   if (reminders.length === 0) {
     container.innerHTML = `
-            <div class="empty-state">
-                ${
-                  type === "upcoming"
-                    ? "No upcoming reminders"
-                    : "No past reminders"
-                }
-            </div>
-        `;
+      <div class="empty-state">
+        ${type === "upcoming" ? "No upcoming reminders" : "No past reminders"}
+      </div>
+    `;
     return;
   }
 
   // Sort reminders by date
-  reminders.sort((a, b) => new Date(a.reminderDate) - new Date(b.reminderDate));
+  if (type === "upcoming") {
+    // Sort upcoming by soonest first
+    reminders.sort((a, b) => new Date(a.reminderDate) - new Date(b.reminderDate));
+  } else {
+    // Sort past by most recent first
+    reminders.sort((a, b) => new Date(b.reminderDate) - new Date(a.reminderDate));
+  }
 
   const html = reminders
     .map((reminder) => createReminderHTML(reminder, type))
@@ -768,17 +959,28 @@ function createReminderHTML(reminder, type) {
   const isPast = reminderDate <= now;
   const isOverdue = isPast && !isTriggered;
 
-  let statusText = "";
-  let delayInfo = "";
+  // Set CSS classes based on status
+  let statusClasses = [];
+  if (isTriggered) statusClasses.push("triggered");
+  else if (isOverdue) statusClasses.push("overdue");
+  else statusClasses.push("scheduled");
+
+  // Get status badge text
+  let statusBadge = "";
+  if (isTriggered) {
+    statusBadge = `<span class="status-badge completed">Completed</span>`;
+  } else if (isOverdue) {
+    statusBadge = `<span class="status-badge overdue">Overdue</span>`;
+  } else {
+    statusBadge = `<span class="status-badge scheduled">Scheduled</span>`;
+  }
 
   // Calculate delay information
-  if (
-    reminder.delayHours !== undefined ||
-    reminder.delayMinutes !== undefined
-  ) {
+  let delayInfo = "";
+  if (reminder.delayHours !== undefined || reminder.delayMinutes !== undefined) {
     const hours = reminder.delayHours || 0;
     const minutes = reminder.delayMinutes || 0;
-    delayInfo = `Delay: ${hours}h ${minutes}m`;
+    delayInfo = `${hours}h ${minutes}m`;
   } else {
     // For older reminders without delay info, calculate from dates
     const createdTime = new Date(reminder.createdAt);
@@ -786,63 +988,96 @@ function createReminderHTML(reminder, type) {
     const delayMs = scheduledTime.getTime() - createdTime.getTime();
     const hours = Math.floor(delayMs / (1000 * 60 * 60));
     const minutes = Math.floor((delayMs % (1000 * 60 * 60)) / (1000 * 60));
-    delayInfo = `Delay: ${hours}h ${minutes}m`;
+    delayInfo = `${hours}h ${minutes}m`;
   }
 
+  // Format time information
+  let timeInfo = "";
   if (isTriggered) {
-    statusText = `Triggered on ${new Date(
-      reminder.triggeredAt
-    ).toLocaleDateString()}`;
+    const triggeredDate = new Date(reminder.triggeredAt || reminderDate);
+    timeInfo = `Completed on ${triggeredDate.toLocaleDateString()} at ${triggeredDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
   } else if (isOverdue) {
-    statusText = "Overdue";
+    const overdueDays = Math.floor((now - reminderDate) / (1000 * 60 * 60 * 24));
+    if (overdueDays > 1) {
+      timeInfo = `Overdue by ${overdueDays} days`;
+    } else {
+      const overdueHours = Math.floor((now - reminderDate) / (1000 * 60 * 60));
+      timeInfo = `Overdue by ${overdueHours} hours`;
+    }
   } else if (type === "upcoming") {
     const timeLeft = reminderDate.getTime() - now.getTime();
     const hoursLeft = Math.floor(timeLeft / (1000 * 60 * 60));
     const minutesLeft = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
-    statusText = `Due in ${hoursLeft}h ${minutesLeft}m (${reminderDate.toLocaleDateString()} at ${reminderDate.toLocaleTimeString(
-      [],
-      { hour: "2-digit", minute: "2-digit" }
-    )})`;
+    
+    if (hoursLeft > 24) {
+      const daysLeft = Math.floor(hoursLeft / 24);
+      timeInfo = `Due in ${daysLeft} days`;
+    } else {
+      timeInfo = `Due in ${hoursLeft}h ${minutesLeft}m`;
+    }
+  }
+
+  // Try to get favicon if we have a URL
+  let faviconHtml = "";
+  try {
+    const urlObj = new URL(reminder.url);
+    const domain = urlObj.hostname;
+    
+    const isValidDomain = domain && 
+                         domain !== 'localhost' && 
+                         !domain.startsWith('127.') && 
+                         !domain.includes('extension') &&
+                         !domain.startsWith('chrome-') &&
+                         domain.includes('.');
+    
+    if (isValidDomain) {
+      faviconHtml = `<img class="site-favicon" src="https://www.google.com/s2/favicons?domain=${domain}&sz=16" alt="" onerror="this.style.display='none';">`;
+    }
+  } catch (e) {
+    // Invalid URL, skip favicon
   }
 
   return `
-        <div class="reminder-item ${isTriggered ? "triggered" : ""}" data-id="${
-    reminder.id
-  }">
-            <div class="reminder-content">
-                <div class="reminder-title">${escapeHtml(reminder.title)}</div>
-                <div class="reminder-url">${escapeHtml(reminder.url)}</div>
-                <div class="reminder-date">
-                    Created: ${createdDate.toLocaleDateString()} at ${createdDate.toLocaleTimeString(
-    [],
-    { hour: "2-digit", minute: "2-digit" }
-  )} | ${delayInfo}
-                </div>
-                ${
-                  statusText
-                    ? `<div class="reminder-status">${statusText}</div>`
-                    : ""
-                }
-            </div>
-            <div class="reminder-actions">
-                <button class="action-btn primary" data-action="open" data-id="${
-                  reminder.id
-                }">
-                    Open Link
-                </button>
-                ${
-                  type === "upcoming" && !isTriggered
-                    ? `<button class="action-btn" data-action="edit" data-id="${reminder.id}">Edit Delay</button>`
-                    : ""
-                }
-                <button class="action-btn danger" data-action="delete" data-id="${
-                  reminder.id
-                }">
-                    Delete
-                </button>
-            </div>
+    <div class="reminder-item ${statusClasses.join(' ')}" data-id="${reminder.id}" data-status="${statusClasses[0]}">
+      <div class="reminder-content">
+        <div class="reminder-title">
+          ${faviconHtml} ${escapeHtml(reminder.title)}
         </div>
-    `;
+        <div class="reminder-url">${formatUrl(reminder.url)}</div>
+        <div class="reminder-date">
+          <div class="reminder-date-row">
+            <svg class="date-icon" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M4.5 1h7A2.5 2.5 0 0114 3.5v9a2.5 2.5 0 01-2.5 2.5h-7A2.5 2.5 0 012 12.5v-9A2.5 2.5 0 014.5 1zm0 1A1.5 1.5 0 003 3.5v9A1.5 1.5 0 004.5 13h7a1.5 1.5 0 001.5-1.5v-9A1.5 1.5 0 0011.5 2h-7z"/>
+              <path d="M11 4H5v1h6V4zm-6 3h6v1H5V7zm6 3H5v1h6v-1z"/>
+            </svg>
+            Created: ${createdDate.toLocaleDateString()} at ${createdDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </div>
+          <div class="reminder-date-row">
+            <svg class="date-icon" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M8 3.5a4.5 4.5 0 110 9 4.5 4.5 0 010-9zm0 1a3.5 3.5 0 100 7 3.5 3.5 0 000-7z"/>
+              <path d="M8 5v3h3v1H7V5h1z"/>
+            </svg>
+            Delay: ${delayInfo}
+          </div>
+        </div>
+        <div class="reminder-status">
+          ${statusBadge}
+          <span>${timeInfo}</span>
+        </div>
+        <div class="reminder-actions">
+          <button class="action-btn primary" data-action="open" data-id="${reminder.id}">
+            Open Link
+          </button>
+          ${type === "upcoming" && !isTriggered
+            ? `<button class="action-btn" data-action="edit" data-id="${reminder.id}">Edit</button>`
+            : ""}
+          <button class="action-btn danger" data-action="delete" data-id="${reminder.id}">
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 async function handleReminderAction(event) {
@@ -997,6 +1232,39 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
+// Format URL to show as www.example.com/... style
+function formatUrl(url) {
+  try {
+    const urlObj = new URL(url);
+    let displayUrl = urlObj.hostname;
+    
+    // Ensure the URL starts with www. for consistent display
+    if (displayUrl.startsWith('www.')) {
+      // Keep as is
+    } else {
+      displayUrl = 'www.' + displayUrl;
+    }
+    
+    // Add path with ellipsis if path is long
+    if (urlObj.pathname && urlObj.pathname !== '/') {
+      // Get first part of the path
+      const pathParts = urlObj.pathname.split('/').filter(Boolean);
+      if (pathParts.length > 0) {
+        // Show first path segment and ellipsis if there are more
+        displayUrl += '/' + pathParts[0];
+        if (pathParts.length > 1 || urlObj.pathname.endsWith('/')) {
+          displayUrl += '/...';
+        }
+      }
+    }
+    
+    return escapeHtml(displayUrl);
+  } catch (e) {
+    // Fallback for invalid URLs
+    return escapeHtml(url);
+  }
+}
+
 function showNotification(message, type) {
   // Remove existing notification
   const existing = document.querySelector(".notification");
@@ -1145,4 +1413,37 @@ function createReminderCard(reminder) {
   }
   
   return card;
+}
+
+// Function to initialize reminder filters
+function initReminderFilters() {
+  const filterButtons = document.querySelectorAll('.filter-btn');
+  if (!filterButtons || filterButtons.length === 0) return;
+  
+  filterButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      // Update active button
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      
+      const filter = btn.dataset.filter;
+      filterReminders(filter);
+    });
+  });
+}
+
+// Function to filter reminders
+function filterReminders(filter) {
+  const reminderItems = document.querySelectorAll('.reminder-item');
+  
+  if (!reminderItems || reminderItems.length === 0) return;
+  
+  reminderItems.forEach(item => {
+    if (filter === 'all') {
+      item.style.display = 'flex';
+    } else {
+      const status = item.dataset.status;
+      item.style.display = (status === filter) ? 'flex' : 'none';
+    }
+  });
 }
