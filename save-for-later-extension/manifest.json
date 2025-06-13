@@ -12,7 +12,8 @@
     "notifications"
   ],
   "host_permissions": [
-  "<all_urls>"
+  "<all_urls>",
+  "https://api.microlink.io/*"
 ],
   "background": {
     "service_worker": "src/background.js"
