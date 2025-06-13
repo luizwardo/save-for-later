@@ -316,9 +316,10 @@ body {
   align-items: flex-start;
 }
 
-.preview-image {
-  width: 120px;
-  height: 100px;
+#preview-image {
+  width: 60%;
+  max-height: 120px;
+  min-height: 80px;
   border: 1px solid #404040;
   border-radius: 8px;
   overflow: hidden;
@@ -330,17 +331,6 @@ body {
   justify-content: center;
 }
 
-.preview-image::before {
-  content: "🌐";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 24px;
-  opacity: 0.6;
-  z-index: 1;
-  color: #666666;
-}
 
 .site-info {
   flex: 1;
@@ -386,6 +376,12 @@ body {
   line-height: 1.4;
   margin-bottom: 4px;
 }
+
+.preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  }
 
 /* Timeline Styling - Updated for embedded time picker */
 .timeline-section {
