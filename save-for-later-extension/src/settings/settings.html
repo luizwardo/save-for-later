@@ -2,7 +2,7 @@
 <html>
 
 <head>
-  <title>Manage Saved Links</title>
+  <title>Save For Later</title>
   <link rel="stylesheet" type="text/css" href="settings.css">
 </head>
 
@@ -10,8 +10,10 @@
   <div class="app-layout">
     <aside class="sidebar">
       <div class="sidebar-header">
-        <h2>SAVE FOR LATER</h2>
-        <button id="back-btn" class="back-btn">&larr;</button>
+        <div class="logo">
+          <img src="../assets/icon_128_white.png" alt="Save for Later">
+        </div>
+        <button id="back-btn" class="back-btn">✕</button>
       </div>
       
       <nav class="sidebar-nav">
@@ -20,12 +22,18 @@
           <ul class="nav-list">
             <li>
               <button class="nav-item active" data-section="all-links">
+                <span class="nav-icon">
+                  <img src="../assets/burger.png" alt="Menu">
+                </span>
                 <span class="nav-text">All</span>
                 <span class="nav-count">0</span>
               </button>
             </li>
             <li>
               <button class="nav-item" data-section="reminders">
+                <span class="nav-icon">
+                  <img src="../assets/clock.png" alt="Clock">
+                </span>
                 <span class="nav-text">Reminders</span>
                 <span class="nav-count">0</span>
               </button>
@@ -66,7 +74,7 @@
     <main class="main-content">
       <div id="all-links-section" class="content-section active">
         <header class="content-header">
-          <h1>All Saved Links</h1>
+          <h1>Saved Links</h1>
           <div class="header-actions">
           </div>
         </header>

@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Save for Later",
   "version": "1.0",
-  "description": "Save links for later viewing.",
+  "description": "For the forgetful ones who always save videos to watch later... and never do. I got your back! Save links and set reminders to check them out later.",
   "permissions": [
     "storage",
     "alarms",
