@@ -383,10 +383,26 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.addEventListener('click', handleLinkAction);
   }
 
-  // Handle link actions (open, delete)
+  // Handle link actions (open, delete) - UPDATE to include card clicks
   async function handleLinkAction(event) {
     const target = event.target;
     
+    // Handle card clicks (but not when clicking on buttons)
+    if (target.closest('.clickable-card') && !target.classList.contains('action-btn') && !target.closest('.action-btn')) {
+      const card = target.closest('.clickable-card');
+      const url = card.dataset.url;
+      if (url) {
+        try {
+          await chrome.tabs.create({ url });
+        } catch (error) {
+          console.error("Error opening link:", error);
+          showNotification("Failed to open link", "error");
+        }
+      }
+      return;
+    }
+    
+    // Handle button clicks
     if (!target.classList.contains('action-btn')) return;
     
     const action = target.dataset.action;
@@ -489,6 +505,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         } else {
           const linksHTML = folderLinks.map((link) => createLinkHTML(link)).join("");
           folderLinksGrid.innerHTML = linksHTML;
+          
+          // ADICIONAR: Load preview images for each link in the folder - same as All Links
+          folderLinks.forEach((link) => {
+            setTimeout(() => {
+              loadSitePreviewForCard(link.url, link.title, link.id);
+            }, 100);
+          });
         }
       }
     } catch (error) {
@@ -609,12 +632,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     const isPast = reminderDate <= now;
     const status = link.triggered ? "Completed" : isPast ? "Overdue" : "Scheduled";
     
-    // Get folder name if it exists
-    let folderInfo = "";
-    if (link.folderId) {
-      folderInfo = `<span class="folder-tag"> In folder</span>`;
-    }
-
     // Get domain for favicon with validation
     let domain = "";
     let faviconHtml = "";
@@ -633,7 +650,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                            domain.length > 2;
       
       if (isValidDomain) {
-        faviconHtml = `<img class="site-favicon" src="https://www.google.com/s2/favicons?domain=${domain}&sz=18" alt="Favicon" onerror="this.style.display='none';">`;
+        faviconHtml = `<img class="site-favicon" src="https://www.google.com/s2/favicons?domain=${domain}&sz=16" alt="Favicon" onerror="this.style.display='none';">`;
       }
     } catch (e) {
       domain = "Invalid URL";
@@ -642,18 +659,28 @@ document.addEventListener("DOMContentLoaded", async () => {
     const cardId = `card-${link.id}`;
 
     const html = `
-      <div class="reminder-item" data-id="${link.id}" id="${cardId}">
-        <div class="site-preview-section">
-          <div class="preview-image" id="preview-${link.id}" style="background: #2a2a2a; display: flex; align-items: center; justify-content: center; color: #666; font-size: 12px;">
-            <span>Loading...</span>
+      <div class="reminder-item clickable-card" data-id="${link.id}" data-url="${link.url}" id="${cardId}">
+        <div class="reminder-content">
+          <div class="site-preview-section">
+            <div class="preview-image" id="preview-${link.id}" style="background: #2a2a2a; display: flex; align-items: center; justify-content: center; color: #666; font-size: 12px;">
+              <span>Loading...</span>
+            </div>
           </div>
-          <div class="card-overlay">
-            <div class="overlay-content">
-              <div class="reminder-title" id="title-${link.id}">${escapeHtml(link.title)}</div>
-              <div class="reminder-actions">
-                <button class="action-btn primary" data-action="open" data-url="${link.url}">Open Link</button>
-                <button class="action-btn danger" data-action="delete" data-id="${link.id}">Delete</button>
-              </div>
+          
+          <div class="card-content">
+            <div class="site-header">
+              ${faviconHtml}
+              <span class="site-domain">${domain.replace('www.', '')}</span>
+            </div>
+            <div class="reminder-title" id="title-${link.id}">${escapeHtml(link.title)}</div>
+            
+            <div class="reminder-actions">
+              <button class="action-btn primary" data-action="open" data-url="${link.url}">
+                Open Link
+              </button>
+              <button class="action-btn danger" data-action="delete" data-id="${link.id}">
+                Delete
+              </button>
             </div>
           </div>
         </div>

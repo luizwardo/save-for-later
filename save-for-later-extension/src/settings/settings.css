@@ -65,6 +65,7 @@ body {
   margin-top: 20px;
 }
 
+/* Updated All Links Card Styling */
 .reminder-item, .link-card {
   position: relative;
   display: flex;
@@ -78,7 +79,8 @@ body {
   backdrop-filter: blur(10px);
   width: 100%;
   max-width: 100%;
-  height: 212px; /* Fixed height: 180px (image) + 32px (padding) */
+  height: auto;
+  min-height: 320px; /* Increased from 280px to 320px */
   box-sizing: border-box;
   overflow: hidden;
 }
@@ -92,7 +94,7 @@ body {
 .reminder-content {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  height: 100%;
   flex: 1;
 }
 
@@ -100,57 +102,120 @@ body {
   position: relative;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
   width: 100%;
-  height: 100%;
+  height: 200px; /* Increased from 180px to 200px */
+  flex-shrink: 0;
 }
 
 .preview-image {
   width: 100%;
   height: 100%;
-  border: 1px solid #404040;
   border-radius: 8px;
   overflow: hidden;
   background: #2a2a2a;
-  flex-shrink: 0;
-  position: absolute;
-  top: 0;
-  left: 0;
+  background-size: cover;
+  background-position: center;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1;
+  color: #666;
+  font-size: 12px;
+  position: relative;
 }
 
-
-.mini-preview {
-  width: 900px;
-  height: 600px;
-  border: none;
-  transform: scale(0.2);
-  transform-origin: top left;
-  background: white;
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 2;
-  display: block;
-  pointer-events: none;
-}
-
-.preview-image.loaded::before {
+/* Remove the overlay - always show content below */
+.card-overlay {
   display: none;
 }
 
-.preview-image.loaded {
-  background: white;
+/* Content section below the image - always visible */
+.card-content {
+  padding: 12px 0 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px; /* Increased from 8px to 10px */
+  flex: 1;
+  min-height: 100px; /* Added minimum height for content area */
 }
 
-/* Estilos para hover sobre a imagem */
-.reminder-item:hover .preview-image,
-.link-card:hover .preview-image {
-  transform: scale(1.02);
-  transition: transform 0.3s ease-in-out;
+.site-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.site-favicon {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.site-domain {
+  font-size: 11px;
+  color: #888888;
+  background: rgba(136, 136, 136, 0.15);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.reminder-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  line-height: 1.3;
+  margin: 0 0 8px 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 36px;
+}
+
+.reminder-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 8px; /* Added padding to ensure buttons are visible */
+}
+
+.action-btn {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.action-btn.primary {
+  background: rgba(76, 175, 80, 0.8);
+  color: #ffffff;
+}
+
+.action-btn.primary:hover {
+  background: rgba(76, 175, 80, 1);
+  transform: translateY(-1px);
+}
+
+.action-btn.danger {
+  background: rgba(244, 67, 54, 0.8);
+  color: #ffffff;
+}
+
+.action-btn.danger:hover {
+  background: rgba(244, 67, 54, 1);
+  transform: translateY(-1px);
 }
 
 /* Smooth transition for title on hover */
@@ -209,7 +274,6 @@ body {
   line-height: 1.4;
   width: 100%;
   word-break: break-word;
-  text-align: center;
   /* Fixed height for consistent size - exactly 2 lines */
   height: auto;
   max-height: 54px;
@@ -849,24 +913,17 @@ body {
   height: 180px;
 }
 
+/* Remove the neon border effect */
 .reminder-item::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 4px;
-  height: 100%;
-  background-color: #2196F3; /* Default blue */
-  border-top-left-radius: 12px;
-  border-bottom-left-radius: 12px;
+  display: none;
 }
 
 .reminder-item.triggered::before {
-  background-color: #4CAF50; /* Green for completed */
+  display: none;
 }
 
 .reminder-item.overdue::before {
-  background-color: #f44336; /* Red for overdue */
+  display: none;
 }
 
 .reminder-content {
@@ -1038,6 +1095,21 @@ body {
   border-color: #2196F3;
 }
 
+/* Make cards clickable */
+.clickable-card {
+  cursor: pointer;
+}
+
+.clickable-card .action-btn {
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+/* Prevent the card click when hovering over buttons */
+.clickable-card .reminder-actions {
+  pointer-events: auto;
+}
+
 /* Responsive design */
 @media (max-width: 600px) {
   .container {
@@ -1077,5 +1149,297 @@ body {
   .stats {
     flex-direction: column;
     gap: 10px;
+  }
+}
+
+/* Modern Folder Styling */
+.modern-folder-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 0;
+  border-bottom: 1px solid rgba(64, 64, 64, 0.3);
+  margin-bottom: 32px;
+}
+
+.folder-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.folder-name {
+  font-size: 28px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+  background: linear-gradient(135deg, #4a9eff, #0066cc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.folder-count {
+  font-size: 14px;
+  color: #888;
+  font-weight: 500;
+}
+
+.folder-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.modern-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.modern-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.modern-btn.secondary {
+  background: rgba(74, 158, 255, 0.1);
+  color: #4a9eff;
+  border: 1px solid rgba(74, 158, 255, 0.3);
+}
+
+.modern-btn.secondary:hover {
+  background: rgba(74, 158, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.modern-btn.danger {
+  background: rgba(255, 68, 68, 0.1);
+  color: #ff4444;
+  border: 1px solid rgba(255, 68, 68, 0.3);
+}
+
+.modern-btn.danger:hover {
+  background: rgba(255, 68, 68, 0.2);
+  transform: translateY(-1px);
+}
+
+/* Modern Empty State */
+.modern-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 40px;
+  text-align: center;
+}
+
+.empty-icon {
+  width: 64px;
+  height: 64px;
+  color: #4a9eff;
+  margin-bottom: 24px;
+}
+
+.empty-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.modern-empty-state h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0 0 8px 0;
+}
+
+.modern-empty-state p {
+  font-size: 14px;
+  color: #888;
+  margin: 0;
+}
+
+/* Modern Folder Cards */
+.modern-folder-card {
+  background: linear-gradient(135deg, rgba(30, 30, 30, 0.9), rgba(20, 20, 20, 0.9));
+  border: 1px solid rgba(64, 64, 64, 0.4);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  height: auto;
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+}
+
+.modern-folder-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(74, 158, 255, 0.5);
+  box-shadow: 0 12px 40px rgba(74, 158, 255, 0.15);
+}
+
+.card-preview {
+  height: 180px;
+  background: #1a1a1a;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  color: #666;
+  font-size: 12px;
+}
+
+.loading-text {
+  color: #666;
+  font-size: 12px;
+}
+
+.status-indicator {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 0, 0, 0.2);
+}
+
+.status-indicator.scheduled {
+  background: #4a9eff;
+}
+
+.status-indicator.overdue {
+  background: #ff4444;
+}
+
+.status-indicator.completed {
+  background: #44aa44;
+}
+
+.card-details {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.domain-name {
+  font-size: 12px;
+  color: #888;
+  background: rgba(136, 136, 136, 0.1);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+  line-height: 1.4;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.reminder-time {
+  font-size: 12px;
+  color: #aaa;
+  background: rgba(170, 170, 170, 0.1);
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.modern-action-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.modern-action-btn svg {
+  width: 12px;
+  height: 12px;
+}
+
+.modern-action-btn.primary {
+  background: #4a9eff;
+  color: white;
+}
+
+.modern-action-btn.primary:hover {
+  background: #357abd;
+  transform: translateY(-1px);
+}
+
+.modern-action-btn.danger {
+  background: rgba(255, 68, 68, 0.8);
+  color: white;
+}
+
+.modern-action-btn.danger:hover {
+  background: #ff4444;
+  transform: translateY(-1px);
+}
+
+/* Responsive Design for Folders */
+@media (max-width: 768px) {
+  .modern-folder-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  
+  .folder-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  
+  .modern-folder-card {
+    min-height: 250px;
+  }
+  
+  .card-preview {
+    height: 140px;
   }
 }
