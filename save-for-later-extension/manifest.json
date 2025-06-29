@@ -18,12 +18,13 @@
   "background": {
     "service_worker": "src/background.js"
   },
+  "icons": {
+    "48": "src/assets/icon.png"
+  },
   "action": {
     "default_popup": "src/popup/popup.html",
     "default_icon": {
-      "16": "src/assets/icon.png",
-      "48": "src/assets/icon.png",
-      "128": "src/assets/icon.png"
+      "48": "src/assets/icon.png"
     }
   }
 }
