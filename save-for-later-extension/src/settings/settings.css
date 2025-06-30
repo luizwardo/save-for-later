@@ -600,20 +600,12 @@ body {
   align-items: center;
 }
 
-.content-header h1 {
-  margin: 0;
-  font-size: 24px;
-  font-weight: 300;
-  color: #ffffff;
+.header-icon {
+  width: 24px;
+  height: 24px;
+  margin-right: 12px;
+  filter: brightness(0.8);
 }
-
-.header-actions {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-
 
 .content-section {
   display: none;
@@ -1481,3 +1473,45 @@ body {
     height: 140px;
   }
 }
+
+/* New styles for folder icons in nav groups */
+.folder-title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700; /* Make text bolder */
+  font-size: 14px; /* Make text bigger */
+}
+
+.folder-icon {
+  margin-left: 5px;
+  margin-right: 5px;
+  width: 22px; /* Make icons smaller */
+  height: 22px;
+  filter: brightness(0.7);
+  transition: filter 0.2s ease;
+}
+
+.nav-group:hover .folder-icon {
+  filter: brightness(1);
+}
+
+
+.main-icon {
+  filter: brightness(0.7);
+  transition: filter 0.2s ease;
+}
+
+.nav-group:hover .main-icon {
+  filter: brightness(1);
+}
+.main-icon {
+  filter: brightness(0.7);
+  transition: filter 0.2s ease;
+}
+
+.nav-group:hover .main-icon {
+  filter: brightness(1);
+}
+
+

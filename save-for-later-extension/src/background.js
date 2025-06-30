@@ -35,6 +35,39 @@ async function testNotification() {
   }
 }
 
+// Auto-delete past reminders function
+async function autoDeletePastReminders() {
+  try {
+    const result = await chrome.storage.local.get(["reminders", "autoDeletePastReminders"]);
+    const reminders = result.reminders || [];
+    const autoDelete = result.autoDeletePastReminders || false;
+
+    if (!autoDelete) return;
+
+    const now = new Date();
+    const pastReminders = reminders.filter(r => new Date(r.reminderDate) <= now && r.triggered);
+    const activeReminders = reminders.filter(r => !(new Date(r.reminderDate) <= now && r.triggered));
+
+    if (pastReminders.length > 0) {
+      // Update storage with only active reminders
+      await chrome.storage.local.set({ reminders: activeReminders });
+      
+      // Clear alarms for deleted reminders
+      for (const reminder of pastReminders) {
+        try {
+          await chrome.alarms.clear(reminder.id);
+        } catch (error) {
+          console.warn("Failed to clear alarm for reminder:", reminder.id);
+        }
+      }
+      
+      console.log(`Auto-deleted ${pastReminders.length} past reminders`);
+    }
+  } catch (error) {
+    console.error("Error auto-deleting past reminders:", error);
+  }
+}
+
 // Handle alarm triggers
 chrome.alarms.onAlarm.addListener(async (alarm) => {
   console.log("Alarm triggered:", alarm.name);
@@ -66,6 +99,55 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
   } catch (error) {
     console.error("Error handling alarm:", error);
   }
+
+  // After handling the alarm, run auto-delete
+  await autoDeletePastReminders();
+});
+
+// Run auto-delete periodically (every hour)
+chrome.alarms.create('autoDeleteCheck', { 
+  delayInMinutes: 60, 
+  periodInMinutes: 60 
+});
+
+chrome.alarms.onAlarm.addListener(async (alarm) => {
+  if (alarm.name === 'autoDeleteCheck') {
+    await autoDeletePastReminders();
+    return;
+  }
+  
+  // Handle alarm triggers
+  chrome.alarms.onAlarm.addListener(async (alarm) => {
+    console.log("Alarm triggered:", alarm.name);
+  
+    try {
+      // Get the reminder from storage
+      const result = await chrome.storage.local.get(["reminders"]);
+      const reminders = result.reminders || [];
+      const reminder = reminders.find((r) => r.id === alarm.name);
+  
+      if (reminder) {
+        // Create notification with three buttons
+        await chrome.notifications.create(reminder.id, {
+          type: "basic",
+          iconUrl: "assets/icon.png",
+          title: "Save for Later Reminder",
+          message: `Time to check: ${reminder.title}`,
+          buttons: [{ title: "Open Link" }, { title: "Dismiss" }],
+        });
+  
+        // Mark reminder as triggered
+        const updatedReminders = reminders.map((r) =>
+          r.id === reminder.id
+            ? { ...r, triggered: true, triggeredAt: new Date().toISOString() }
+            : r
+        );
+         await chrome.storage.local.set({ reminders: updatedReminders });
+         }
+    } catch (error) {
+      console.error("Error handling alarm:", error);
+    }
+  });
 });
 
 // Handle notification button clicks

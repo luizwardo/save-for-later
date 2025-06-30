@@ -17,6 +17,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   const newFolderInput = document.getElementById("new-folder-input");
   const foldersNav = document.getElementById("folders-nav");
 
+  const autoDeleteCheckbox = document.getElementById("auto-delete");
+
   // Debug logging function
   function debugLog(message, level = "info") {
     const timestamp = new Date().toLocaleTimeString();
@@ -63,6 +65,36 @@ document.addEventListener("DOMContentLoaded", async () => {
       console.error("Test notification error:", error);
     }
   });
+
+  // Load settings on page load
+  async function loadSettings() {
+    try {
+      const result = await chrome.storage.local.get(["autoDeletePastReminders"]);
+      const autoDelete = result.autoDeletePastReminders || false;
+      
+      if (autoDeleteCheckbox) {
+        autoDeleteCheckbox.checked = autoDelete;
+      }
+    } catch (error) {
+      console.error("Error loading settings:", error);
+    }
+  }
+
+  // Save settings when checkbox changes
+  function initSettingsListeners() {
+    if (autoDeleteCheckbox) {
+      autoDeleteCheckbox.addEventListener("change", async (e) => {
+        try {
+          await chrome.storage.local.set({ 
+            autoDeletePastReminders: e.target.checked 
+          });
+          console.log("Auto-delete setting saved:", e.target.checked);
+        } catch (error) {
+          console.error("Error saving setting:", error);
+        }
+      });
+    }
+  }
 
   // Initialize debug info on load
   async function initDebugInfo() {
@@ -834,8 +866,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   initSidebarNavigation();
   initFolderManagement();
   addLinkEventListeners();
+  initSettingsListeners(); // Add this line
   await loadFolders();
   await updateReminderCounts();
+  await loadSettings(); // Add this line
 
   // Load initial section (All Links)
   const allLinksNav = document.querySelector('[data-section="all-links"]');
@@ -920,14 +954,40 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 async function loadReminders() {
   try {
-    const result = await chrome.storage.local.get(["reminders"]);
+    const result = await chrome.storage.local.get(["reminders", "autoDeletePastReminders"]);
     const reminders = result.reminders || [];
+    const autoDelete = result.autoDeletePastReminders || false;
 
     const now = new Date();
-    const upcomingReminders = reminders.filter(
+    
+    // If auto-delete is enabled, filter out past reminders and update storage
+    let filteredReminders = reminders;
+    if (autoDelete) {
+      const pastReminders = reminders.filter(r => new Date(r.reminderDate) <= now && r.triggered);
+      const activeReminders = reminders.filter(r => !(new Date(r.reminderDate) <= now && r.triggered));
+      
+      if (pastReminders.length > 0) {
+        // Delete past reminders from storage
+        await chrome.storage.local.set({ reminders: activeReminders });
+        
+        // Clear their alarms
+        for (const reminder of pastReminders) {
+          try {
+            await chrome.alarms.clear(reminder.id);
+          } catch (error) {
+            console.warn("Failed to clear alarm for reminder:", reminder.id);
+          }
+        }
+        
+        console.log(`Auto-deleted ${pastReminders.length} past reminders`);
+        filteredReminders = activeReminders;
+      }
+    }
+
+    const upcomingReminders = filteredReminders.filter(
       (r) => new Date(r.reminderDate) > now && !r.triggered
     );
-    const pastReminders = reminders.filter(
+    const pastReminders = filteredReminders.filter(
       (r) => new Date(r.reminderDate) <= now || r.triggered
     );
 
