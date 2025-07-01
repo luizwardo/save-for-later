@@ -1,3 +1,10 @@
+@import url('https://fonts.googleapis.com/css2?family=Bree+Serif&display=swap');
+
+h1, h2, h3 {
+  font-family: 'Bree Serif', serif;
+  font-weight: 400;
+}
+
 body {
   margin: 0;
   padding: 0;
@@ -14,12 +21,13 @@ body {
 }
 
 .sidebar {
-  width: 280px;
+  width: 300px;
   background: #242424;
   border-right: 1px solid #404040;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+  overflow-y: hidden;
+
 }
 
 .sidebar-header {
@@ -28,6 +36,8 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  height: 170px;
+  box-sizing: border-box;
 }
 
 .sidebar-header .logo {
@@ -48,26 +58,6 @@ body {
   font-weight: 500;
   color: #ffffff;
   display: none; /* Hide the text title */
-}
-
-.back-btn {
-  width: 32px;
-  height: 32px;
-  background: transparent;
-  border: 1px solid #404040;
-  border-radius: 6px;
-  color: #e0e0e0;
-  cursor: pointer;
-  font-size: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-}
-
-.back-btn:hover {
-  background: #353535;
-  border-color: #505050;
 }
 
 /* Reminders List Styling */
@@ -519,8 +509,8 @@ body {
 }
 
 .nav-item {
-  width: 100%;
-  padding: 12px 20px;
+  width: 95%;
+  padding: 12px 18px;
   background: transparent;
   border: none;
   color: #b0b0b0;
@@ -653,6 +643,8 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  height: 140px;
+  box-sizing: border-box;
 }
 
 .header-icon {
@@ -1718,8 +1710,6 @@ body {
   background: transparent;
 }
 
-.icon-btn.secondary:hover {
-}
 
 .icon-btn.danger {
   background: transparent;

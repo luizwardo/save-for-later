@@ -18,7 +18,7 @@ async function testNotification() {
 
     await chrome.notifications.create(notificationId, {
       type: "basic",
-      iconUrl: "assets/icon.png",
+      iconUrl: "assets/icon_128_white.png",
       title: "Test Notification",
       message: "This is a test notification from Save for Later extension",
       buttons: [{ title: "Test Button 1" }, { title: "Test Button 2" }],
@@ -33,6 +33,27 @@ async function testNotification() {
   } catch (error) {
     console.error("Error creating test notification:", error);
   }
+}
+
+function showNotification(title, message, reminderId) {
+  const notificationId = `reminder_${reminderId}`;
+  
+  chrome.notifications.create(notificationId, {
+    type: 'basic',
+    iconUrl: 'assets/icon_128_white.png',
+    title: title,
+    message: message,
+    priority: 2,
+    buttons: [
+      { title: 'Open Link' },
+      { title: 'Dismiss' }
+    ]
+  });
+
+  // Auto-clear after 5 seconds
+  setTimeout(() => {
+    chrome.notifications.clear(notificationId);
+  }, 5000);
 }
 
 // Auto-delete past reminders function
@@ -70,6 +91,11 @@ async function autoDeletePastReminders() {
 
 // Handle alarm triggers
 chrome.alarms.onAlarm.addListener(async (alarm) => {
+  if (alarm.name === 'autoDeleteCheck') {
+    await autoDeletePastReminders();
+    return;
+  }
+  
   console.log("Alarm triggered:", alarm.name);
 
   try {
@@ -79,10 +105,10 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
     const reminder = reminders.find((r) => r.id === alarm.name);
 
     if (reminder) {
-      // Create notification with three buttons
+      // Create notification with icon_128_white.png
       await chrome.notifications.create(reminder.id, {
         type: "basic",
-        iconUrl: "assets/icon.png",
+        iconUrl: "assets/icon_128_white.png",
         title: "Save for Later Reminder",
         message: `Time to check: ${reminder.title}`,
         buttons: [{ title: "Open Link" }, { title: "Dismiss" }],
@@ -130,7 +156,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
         // Create notification with three buttons
         await chrome.notifications.create(reminder.id, {
           type: "basic",
-          iconUrl: "assets/icon.png",
+          iconUrl: "assets/icon_128_white.png",
           title: "Save for Later Reminder",
           message: `Time to check: ${reminder.title}`,
           buttons: [{ title: "Open Link" }, { title: "Dismiss" }],
