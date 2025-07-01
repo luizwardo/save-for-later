@@ -13,7 +13,8 @@
         <div class="logo">
           <img src="../assets/icon_128_white.png" alt="Save for Later">
         </div>
-        <button id="back-btn" class="back-btn">✕</button>
+          
+        </button>
       </div>
       
       <nav class="sidebar-nav">
@@ -23,8 +24,11 @@
               <img src="../assets/select-all.png" alt="All" class="main-icon">
               Main
             </span>
+            <button id="toggle-main-btn" class="toggle-btn">
+              <img src="../assets/down-arrow.png" alt="arrow" class="down-arrow">
+            </button>
           </div>
-          <ul class="nav-list">
+          <ul class="nav-list main-list collapsed" id="main-nav">
             <li>
               <button class="nav-item active" data-section="all-links">
                 <span class="nav-icon">
@@ -52,9 +56,14 @@
               <img src="../assets/folder.png" alt="Folder" class="folder-icon">
               Folders
             </span>
-            <button id="add-folder-btn" class="add-btn">+</button>
+            <div class="folder-controls">
+              <button id="toggle-folders-btn" class="toggle-btn">
+                <img src="../assets/down-arrow.png" alt="arrow" class="down-arrow">
+              </button>
+              <button id="add-folder-btn" class="add-btn">+</button>
+            </div>
           </div>
-          <ul class="nav-list" id="folders-nav">
+          <ul class="nav-list folder-list collapsed" id="folders-nav">
             <li class="empty-folders">
               <span class="empty-text">No folders yet</span>
             </li>
@@ -64,11 +73,14 @@
         <div class="nav-group">
           <div class="nav-group-title">
             <span class="folder-title-with-icon">
-              <img src="../assets/wrench.png" alt="Tools" class="folder-icon">
-              Tools
+              <img src="../assets/setting.png" alt="Settings" class="settings-icon">
+              Settings
             </span>
+            <button id="toggle-settings-btn" class="toggle-btn">
+              <img src="../assets/down-arrow.png" alt="arrow" class="down-arrow">
+            </button>
           </div>
-          <ul class="nav-list">
+          <ul class="nav-list settings-list collapsed" id="settings-nav">
             <li>
               <button class="nav-item" data-section="debug">
                 <span class="nav-text">Debug Console</span>
@@ -77,9 +89,9 @@
             <li>
               <button class="nav-item" data-section="settings">
                 <span class="nav-icon">
-                  <img src="../assets/setting-lines.png" alt="Settings">
+                  <img src="../assets/setting.png" alt="Settings">
                 </span>
-                <span class="nav-text">Settings</span>
+                <span class="nav-text">General</span>
               </button>
             </li>
           </ul>
@@ -159,8 +171,8 @@
 
       <div id="settings-section" class="content-section">
         <header class="content-header">
-          <img src="../assets/setting-lines.png" alt="Settings" class="header-icon">
-          <h1>Settings</h1>
+          <img src="../assets/setting.png" alt="Settings" class="header-icon">
+          <h1>Misc</h1>
           <div class="header-actions">
           </div>
         </header>

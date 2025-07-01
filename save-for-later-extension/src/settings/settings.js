@@ -16,55 +16,60 @@ document.addEventListener("DOMContentLoaded", async () => {
   const cancelFolderBtn = document.getElementById("cancel-folder-btn");
   const newFolderInput = document.getElementById("new-folder-input");
   const foldersNav = document.getElementById("folders-nav");
+  const toggleFoldersBtn = document.getElementById("toggle-folders-btn");
 
   const autoDeleteCheckbox = document.getElementById("auto-delete");
 
-  // Debug logging function
-  function debugLog(message, level = "info") {
-    const timestamp = new Date().toLocaleTimeString();
-    const logEntry = document.createElement("div");
-    logEntry.className = `log-entry log-level-${level}`;
-    logEntry.innerHTML = `<span class="timestamp">${timestamp}</span>${message}`;
-    debugInfo.appendChild(logEntry);
-    debugInfo.scrollTop = debugInfo.scrollHeight;
-    console.log(`[Settings] ${message}`);
+  // Test notification button
+  if (testNotificationBtn) {
+    testNotificationBtn.addEventListener("click", async () => {
+      debugLog("Testing notification...", "info");
+
+      try {
+        // Check notification permission
+        const permission = await Notification.requestPermission();
+        debugLog(
+          `Notification permission: ${permission}`,
+          permission === "granted" ? "success" : "error"
+        );
+
+        if (permission !== "granted") {
+          debugLog(
+            "Notification permission denied. Please enable notifications for this extension.",
+            "error"
+          );
+          return;
+        }
+
+        // Send message to background script to create notification
+        const response = await chrome.runtime.sendMessage({
+          action: "testNotification",
+        });
+
+        if (response && response.success) {
+          debugLog("Test notification sent successfully!", "success");
+        } else {
+          debugLog("Failed to send test notification", "error");
+        }
+      } catch (error) {
+        debugLog(`Error testing notification: ${error.message}`, "error");
+        console.error("Test notification error:", error);
+      }
+    });
   }
 
-  // Test notification button
-  testNotificationBtn.addEventListener("click", async () => {
-    debugLog("Testing notification...", "info");
-
-    try {
-      // Check notification permission
-      const permission = await Notification.requestPermission();
-      debugLog(
-        `Notification permission: ${permission}`,
-        permission === "granted" ? "success" : "error"
-      );
-
-      if (permission !== "granted") {
-        debugLog(
-          "Notification permission denied. Please enable notifications for this extension.",
-          "error"
-        );
-        return;
-      }
-
-      // Send message to background script to create notification
-      const response = await chrome.runtime.sendMessage({
-        action: "testNotification",
-      });
-
-      if (response && response.success) {
-        debugLog("Test notification sent successfully!", "success");
-      } else {
-        debugLog("Failed to send test notification", "error");
-      }
-    } catch (error) {
-      debugLog(`Error testing notification: ${error.message}`, "error");
-      console.error("Test notification error:", error);
+  // Debug logging function
+  function debugLog(message, level = "info") {
+    if (debugInfo) {
+      const timestamp = new Date().toLocaleTimeString();
+      const logEntry = document.createElement("div");
+      logEntry.className = `log-entry log-level-${level}`;
+      logEntry.innerHTML = `<span class="timestamp">${timestamp}</span>${message}`;
+      debugInfo.appendChild(logEntry);
+      debugInfo.scrollTop = debugInfo.scrollHeight;
     }
-  });
+    console.log(`[Settings] ${message}`);
+  }
 
   // Load settings on page load
   async function loadSettings() {
@@ -127,37 +132,43 @@ document.addEventListener("DOMContentLoaded", async () => {
   initDebugInfo();
 
   // Back button functionality
-  backBtn.addEventListener("click", () => {
-    window.close();
-  });
+  if (backBtn) {
+    backBtn.addEventListener("click", () => {
+      window.close();
+    });
+  }
 
   // Clear all reminders
-  clearAllBtn.addEventListener("click", async () => {
-    if (
-      confirm(
-        "Are you sure you want to clear all reminders? This action cannot be undone."
-      )
-    ) {
-      try {
-        // Clear all alarms
-        const alarms = await chrome.alarms.getAll();
-        for (const alarm of alarms) {
-          await chrome.alarms.clear(alarm.name);
+  if (clearAllBtn) {
+    clearAllBtn.addEventListener("click", async () => {
+      if (
+        confirm(
+          "Are you sure you want to clear all reminders? This action cannot be undone."
+        )
+      ) {
+        try {
+          // Clear all alarms
+          const alarms = await chrome.alarms.getAll();
+          for (const alarm of alarms) {
+            await chrome.alarms.clear(alarm.name);
+          }
+
+          // Clear storage
+          await chrome.storage.local.set({ reminders: [] });
+
+          // Refresh the display
+          if (typeof loadReminders === 'function') {
+            await loadReminders();
+          }
+
+          showNotification("All reminders cleared successfully", "success");
+        } catch (error) {
+          console.error("Error clearing reminders:", error);
+          showNotification("Failed to clear reminders", "error");
         }
-
-        // Clear storage
-        await chrome.storage.local.set({ reminders: [] });
-
-        // Refresh the display
-        await loadReminders();
-
-        showNotification("All reminders cleared successfully", "success");
-      } catch (error) {
-        console.error("Error clearing reminders:", error);
-        showNotification("Failed to clear reminders", "error");
       }
-    }
-  });
+    });
+  }
 
   // Initialize sidebar navigation
   function initSidebarNavigation() {
@@ -435,12 +446,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
     
     // Handle button clicks
-    if (!target.classList.contains('action-btn')) return;
+    if (!target.classList.contains('action-btn') && !target.closest('.action-btn')) return;
     
-    const action = target.dataset.action;
-    const linkId = target.dataset.id;
-    const url = target.dataset.url;
-    const folderId = target.dataset.folderId;
+    const actionBtn = target.classList.contains('action-btn') ? target : target.closest('.action-btn');
+    const action = actionBtn.dataset.action;
+    const linkId = actionBtn.dataset.id;
+    const url = actionBtn.dataset.url;
+    const folderId = actionBtn.dataset.folderId;
 
     try {
       switch (action) {
@@ -476,8 +488,58 @@ document.addEventListener("DOMContentLoaded", async () => {
             const folders = result.folders || [];
             const folder = folders.find(f => f.id === folderId);
             
-            if (folder && confirm(`Are you sure you want to delete the folder "${folder.name}"? All links in this folder will be moved back to the main list.`)) {
-              await deleteFolder(folderId);
+            if (folder) {
+              // Create modern modal for delete confirmation
+              const modalHTML = `
+                <div class="modal show" id="delete-folder-modal">
+                  <div class="modal-content">
+                    <h3>Delete Folder</h3>
+                    <p style="color: #e0e0e0; margin: 0 0 24px 0; text-align: center; line-height: 1.5;">
+                      Are you sure you want to delete the folder "${escapeHtml(folder.name)}"?<br>
+                      All links in this folder will be moved back to the main list.
+                    </p>
+                    <div class="modal-actions">
+                      <button id="cancel-delete-folder-btn" class="btn-secondary">Cancel</button>
+                      <button id="confirm-delete-folder-btn" class="btn-primary">Delete Folder</button>
+                    </div>
+                  </div>
+                </div>
+              `;
+              
+              document.body.insertAdjacentHTML('beforeend', modalHTML);
+              
+              const modal = document.getElementById('delete-folder-modal');
+              const cancelBtn = document.getElementById('cancel-delete-folder-btn');
+              const confirmBtn = document.getElementById('confirm-delete-folder-btn');
+              
+              // Handle confirm delete
+              const handleDelete = async () => {
+                modal.remove();
+                await deleteFolder(folderId);
+              };
+              
+              // Handle cancel
+              const handleCancel = () => {
+                modal.remove();
+              };
+              
+              // Event listeners
+              confirmBtn.addEventListener('click', handleDelete);
+              cancelBtn.addEventListener('click', handleCancel);
+              
+              modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                  handleCancel();
+                }
+              });
+              
+              // Escape key to cancel
+              document.addEventListener('keydown', function escapeHandler(e) {
+                if (e.key === 'Escape') {
+                  handleCancel();
+                  document.removeEventListener('keydown', escapeHandler);
+                }
+              });
             }
           }
           break;
@@ -515,18 +577,19 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       const folderTitle = document.getElementById("folder-title");
       if (folderTitle) {
-        folderTitle.innerHTML = `
-          <div class="folder-header">
-            <h2>${escapeHtml(folder.name)}</h2>
-            <div class="folder-actions">
-              <button class="action-btn secondary" data-action="edit-folder" data-folder-id="${folder.id}">
-                Edit Name
-              </button>
-              <button class="action-btn danger" data-action="delete-folder" data-folder-id="${folder.id}">
-                Delete Folder
-              </button>
-            </div>
-          </div>
+        folderTitle.textContent = folder.name;
+      }
+
+      // Update header actions with the folder buttons
+      const headerActions = document.querySelector("#folder-content-section .header-actions");
+      if (headerActions) {
+        headerActions.innerHTML = `
+          <button class="action-btn secondary icon-btn" data-action="edit-folder" data-folder-id="${folder.id}">
+            <img src="../assets/pencil.png" alt="Edit" class="action-icon">
+          </button>
+          <button class="action-btn danger icon-btn" data-action="delete-folder" data-folder-id="${folder.id}">
+            <img src="../assets/delete.png" alt="Delete" class="action-icon">
+          </button>
         `;
       }
 
@@ -538,7 +601,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           const linksHTML = folderLinks.map((link) => createLinkHTML(link)).join("");
           folderLinksGrid.innerHTML = linksHTML;
           
-          // ADICIONAR: Load preview images for each link in the folder - same as All Links
+          // Load preview images for each link in the folder
           folderLinks.forEach((link) => {
             setTimeout(() => {
               loadSitePreviewForCard(link.url, link.title, link.id);
@@ -563,29 +626,79 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
       }
 
-      const newName = prompt("Enter new folder name:", folder.name);
-      if (!newName || newName.trim() === "") return;
-
-      const trimmedName = newName.trim();
+      // Create modern modal for editing
+      const modalHTML = `
+        <div class="modal show" id="edit-folder-modal">
+          <div class="modal-content">
+            <h3>Edit Folder Name</h3>
+            <input type="text" id="edit-folder-input" placeholder="Enter folder name" value="${escapeHtml(folder.name)}">
+            <div class="modal-actions">
+              <button id="cancel-edit-folder-btn" class="btn-secondary">Cancel</button>
+              <button id="save-edit-folder-btn" class="btn-primary">Save Changes</button>
+            </div>
+          </div>
+        </div>
+      `;
       
-      // Check if name already exists
-      if (folders.some(f => f.id !== folderId && f.name.toLowerCase() === trimmedName.toLowerCase())) {
-        showNotification("Folder name already exists", "error");
-        return;
-      }
-
-      // Update folder name
-      const updatedFolders = folders.map(f => 
-        f.id === folderId ? { ...f, name: trimmedName } : f
-      );
-
-      await chrome.storage.local.set({ folders: updatedFolders });
+      document.body.insertAdjacentHTML('beforeend', modalHTML);
       
-      // Refresh displays
-      await loadFolders();
-      await loadFolderContent(folderId);
+      const modal = document.getElementById('edit-folder-modal');
+      const input = document.getElementById('edit-folder-input');
+      const cancelBtn = document.getElementById('cancel-edit-folder-btn');
+      const saveBtn = document.getElementById('save-edit-folder-btn');
       
-      showNotification("Folder renamed successfully", "success");
+      input.focus();
+      input.select();
+      
+      // Handle save
+      const handleSave = async () => {
+        const newName = input.value.trim();
+        if (!newName) return;
+        
+        // Check if name already exists
+        if (folders.some(f => f.id !== folderId && f.name.toLowerCase() === newName.toLowerCase())) {
+          showNotification("Folder name already exists", "error");
+          return;
+        }
+        
+        // Update folder name
+        const updatedFolders = folders.map(f => 
+          f.id === folderId ? { ...f, name: newName } : f
+        );
+        
+        await chrome.storage.local.set({ folders: updatedFolders });
+        
+        // Refresh displays
+        await loadFolders();
+        await loadFolderContent(folderId);
+        
+        modal.remove();
+        showNotification("Folder renamed successfully", "success");
+      };
+      
+      // Handle cancel
+      const handleCancel = () => {
+        modal.remove();
+      };
+      
+      // Event listeners
+      saveBtn.addEventListener('click', handleSave);
+      cancelBtn.addEventListener('click', handleCancel);
+      
+      input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          handleSave();
+        } else if (e.key === 'Escape') {
+          handleCancel();
+        }
+      });
+      
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          handleCancel();
+        }
+      });
+      
     } catch (error) {
       console.error("Error editing folder:", error);
       showNotification("Failed to edit folder", "error");
@@ -865,6 +978,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Initialize everything - UPDATE to add missing calls
   initSidebarNavigation();
   initFolderManagement();
+  initFolderToggle(); // Add this line
   addLinkEventListeners();
   initSettingsListeners(); // Add this line
   await loadFolders();
@@ -1534,3 +1648,60 @@ function filterReminders(filter) {
     }
   });
 }
+
+// Initialize folder toggle functionality
+function initFolderToggle() {
+    // Main section toggle
+    const toggleMainBtn = document.getElementById("toggle-main-btn");
+    const mainNav = document.getElementById("main-nav");
+    
+    if (toggleMainBtn && mainNav) {
+      toggleMainBtn.addEventListener("click", () => {
+        const isCollapsed = mainNav.classList.contains("collapsed");
+        
+        if (isCollapsed) {
+          mainNav.classList.remove("collapsed");
+          toggleMainBtn.classList.add("expanded");
+        } else {
+          mainNav.classList.add("collapsed");
+          toggleMainBtn.classList.remove("expanded");
+        }
+      });
+    }
+
+    // Folders section toggle  
+    const toggleFoldersBtn = document.getElementById("toggle-folders-btn");
+    const foldersNav = document.getElementById("folders-nav");
+    
+    if (toggleFoldersBtn && foldersNav) {
+      toggleFoldersBtn.addEventListener("click", () => {
+        const isCollapsed = foldersNav.classList.contains("collapsed");
+        
+        if (isCollapsed) {
+          foldersNav.classList.remove("collapsed");
+          toggleFoldersBtn.classList.add("expanded");
+        } else {
+          foldersNav.classList.add("collapsed");
+          toggleFoldersBtn.classList.remove("expanded");
+        }
+      });
+    }
+
+    // Settings section toggle
+    const toggleSettingsBtn = document.getElementById("toggle-settings-btn");
+    const settingsNav = document.getElementById("settings-nav");
+    
+    if (toggleSettingsBtn && settingsNav) {
+      toggleSettingsBtn.addEventListener("click", () => {
+        const isCollapsed = settingsNav.classList.contains("collapsed");
+        
+        if (isCollapsed) {
+          settingsNav.classList.remove("collapsed");
+          toggleSettingsBtn.classList.add("expanded");
+        } else {
+          settingsNav.classList.add("collapsed");
+          toggleSettingsBtn.classList.remove("expanded");
+        }
+      });
+    }
+  }
