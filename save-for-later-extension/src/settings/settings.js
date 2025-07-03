@@ -1027,37 +1027,41 @@ document.addEventListener("DOMContentLoaded", async () => {
   initDebugInfo();
 
   // Back button functionality
-  backBtn.addEventListener("click", () => {
-    window.close();
-  });
+  if (backBtn) {
+    backBtn.addEventListener("click", () => {
+      window.close();
+    });
+  }
 
   // Clear all reminders
-  clearAllBtn.addEventListener("click", async () => {
-    if (
-      confirm(
-        "Are you sure you want to clear all reminders? This action cannot be undone."
-      )
-    ) {
-      try {
-        // Clear all alarms
-        const alarms = await chrome.alarms.getAll();
-        for (const alarm of alarms) {
-          await chrome.alarms.clear(alarm.name);
+  if (clearAllBtn) {
+    clearAllBtn.addEventListener("click", async () => {
+      if (
+        confirm(
+          "Are you sure you want to clear all reminders? This action cannot be undone."
+        )
+      ) {
+        try {
+          // Clear all alarms
+          const alarms = await chrome.alarms.getAll();
+          for (const alarm of alarms) {
+            await chrome.alarms.clear(alarm.name);
+          }
+
+          // Clear storage
+          await chrome.storage.local.set({ reminders: [] });
+
+          // Refresh the display
+          await loadReminders();
+
+          showNotification("All reminders cleared successfully", "success");
+        } catch (error) {
+          console.error("Error clearing reminders:", error);
+          showNotification("Failed to clear reminders", "error");
         }
-
-        // Clear storage
-        await chrome.storage.local.set({ reminders: [] });
-
-        // Refresh the display
-        await loadReminders();
-
-        showNotification("All reminders cleared successfully", "success");
-      } catch (error) {
-        console.error("Error clearing reminders:", error);
-        showNotification("Failed to clear reminders", "error");
       }
-    }
-  });
+    });
+  }
 
   // Load and display reminders
   await loadReminders();

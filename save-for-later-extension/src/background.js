@@ -18,7 +18,7 @@ async function testNotification() {
 
     await chrome.notifications.create(notificationId, {
       type: "basic",
-      iconUrl: chrome.runtime.getURL("assets/icon_128_white.png"),
+      iconUrl: "assets/icon.png",
       title: "Test Notification",
       message: "This is a test notification from Save for Later extension",
       buttons: [{ title: "Test Button 1" }, { title: "Test Button 2" }],
@@ -40,7 +40,7 @@ function showNotification(title, message, reminderId) {
   
   chrome.notifications.create(notificationId, {
     type: 'basic',
-    iconUrl: chrome.runtime.getURL('assets/icon_128_white.png'),
+    iconUrl: 'assets/icon.png',
     title: title,
     message: message,
     priority: 2,
@@ -105,10 +105,10 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
     const reminder = reminders.find((r) => r.id === alarm.name);
 
     if (reminder) {
-      // Create notification with icon_128_white.png
+      // Create notification
       await chrome.notifications.create(reminder.id, {
         type: "basic",
-        iconUrl: chrome.runtime.getURL("assets/icon_128_white.png"),
+        iconUrl: "assets/icon.png",
         title: "Save for Later Reminder",
         message: `Time to check: ${reminder.title}`,
         buttons: [{ title: "Open Link" }, { title: "Dismiss" }],
@@ -120,8 +120,8 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
           ? { ...r, triggered: true, triggeredAt: new Date().toISOString() }
           : r
       );
-       await chrome.storage.local.set({ reminders: updatedReminders });
-       }
+      await chrome.storage.local.set({ reminders: updatedReminders });
+    }
   } catch (error) {
     console.error("Error handling alarm:", error);
   }
