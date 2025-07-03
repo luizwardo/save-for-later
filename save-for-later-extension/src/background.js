@@ -18,7 +18,7 @@ async function testNotification() {
 
     await chrome.notifications.create(notificationId, {
       type: "basic",
-      iconUrl: "assets/icon_128_white.png",
+      iconUrl: chrome.runtime.getURL("assets/icon_128_white.png"),
       title: "Test Notification",
       message: "This is a test notification from Save for Later extension",
       buttons: [{ title: "Test Button 1" }, { title: "Test Button 2" }],
@@ -40,7 +40,7 @@ function showNotification(title, message, reminderId) {
   
   chrome.notifications.create(notificationId, {
     type: 'basic',
-    iconUrl: 'assets/icon_128_white.png',
+    iconUrl: chrome.runtime.getURL('assets/icon_128_white.png'),
     title: title,
     message: message,
     priority: 2,
@@ -108,7 +108,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
       // Create notification with icon_128_white.png
       await chrome.notifications.create(reminder.id, {
         type: "basic",
-        iconUrl: "assets/icon_128_white.png",
+        iconUrl: chrome.runtime.getURL("assets/icon_128_white.png"),
         title: "Save for Later Reminder",
         message: `Time to check: ${reminder.title}`,
         buttons: [{ title: "Open Link" }, { title: "Dismiss" }],
@@ -134,46 +134,6 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 chrome.alarms.create('autoDeleteCheck', { 
   delayInMinutes: 60, 
   periodInMinutes: 60 
-});
-
-chrome.alarms.onAlarm.addListener(async (alarm) => {
-  if (alarm.name === 'autoDeleteCheck') {
-    await autoDeletePastReminders();
-    return;
-  }
-  
-  // Handle alarm triggers
-  chrome.alarms.onAlarm.addListener(async (alarm) => {
-    console.log("Alarm triggered:", alarm.name);
-  
-    try {
-      // Get the reminder from storage
-      const result = await chrome.storage.local.get(["reminders"]);
-      const reminders = result.reminders || [];
-      const reminder = reminders.find((r) => r.id === alarm.name);
-  
-      if (reminder) {
-        // Create notification with three buttons
-        await chrome.notifications.create(reminder.id, {
-          type: "basic",
-          iconUrl: "assets/icon_128_white.png",
-          title: "Save for Later Reminder",
-          message: `Time to check: ${reminder.title}`,
-          buttons: [{ title: "Open Link" }, { title: "Dismiss" }],
-        });
-  
-        // Mark reminder as triggered
-        const updatedReminders = reminders.map((r) =>
-          r.id === reminder.id
-            ? { ...r, triggered: true, triggeredAt: new Date().toISOString() }
-            : r
-        );
-         await chrome.storage.local.set({ reminders: updatedReminders });
-         }
-    } catch (error) {
-      console.error("Error handling alarm:", error);
-    }
-  });
 });
 
 // Handle notification button clicks

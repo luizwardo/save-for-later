@@ -437,11 +437,6 @@ body {
     left: 0;
     right: 0;
     height: 20px;
-    background: linear-gradient(135deg, rgba(176, 176, 176, 0.1), rgba(255, 255, 255, 0.05));
-    border-top: 1px solid rgba(176, 176, 176, 0.3);
-    border-bottom: 1px solid rgba(176, 176, 176, 0.3);
-    pointer-events: none;
-    z-index: 1;
 }
 
 .wheel-items {
@@ -506,8 +501,6 @@ body {
     font-weight: 600;
 }
 
-/* Remove unused input styles */
-/* .inputs-grid, .input-group input styles are no longer needed */
 
 /* Remove old delay-info styling - no longer used */
 .delay-info {
@@ -873,11 +866,6 @@ body {
     left: 0;
     right: 0;
     height: 20px;
-    background: linear-gradient(135deg, rgba(176, 176, 176, 0.1), rgba(255, 255, 255, 0.05));
-    border-top: 1px solid rgba(176, 176, 176, 0.3);
-    border-bottom: 1px solid rgba(176, 176, 176, 0.3);
-    pointer-events: none;
-    z-index: 1;
 }
 
 .wheel-items {

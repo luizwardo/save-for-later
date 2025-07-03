@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", async () => {
-  // Get all elements except slider-related ones
+  // Get all elements
   const setReminderBtn = document.getElementById("set-reminder");
   const settingsBtn = document.getElementById("settings");
   const previewTime = document.getElementById("preview-time");
@@ -9,7 +9,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const newFolderInput = document.getElementById("new-folder");
   const newFolderBtn = document.getElementById("new-folder-btn");
 
-  // Time picker elements (now embedded)
+  // Time picker elements
   const hoursWheel = document.getElementById('hours-wheel');
   const minutesWheel = document.getElementById('minutes-wheel');
   
@@ -33,15 +33,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (tab) {
       currentTabUrl = tab.url;
       currentTabTitle = tab.title;
-      
-      // Load site preview
       loadSitePreview(tab.url, tab.title);
     }
   } catch (error) {
     console.error("Error getting current tab:", error);
   }
 
-  // Function to load site preview (simplified - no iframe)
+  // Function to load site preview
   function loadSitePreview(url, title) {
     const siteTitle = document.getElementById("site-title");
     const siteDomain = document.getElementById("site-domain");
@@ -76,36 +74,32 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
       
       if (previewImage) {
-        // Use a placeholder image for unsupported URLs
         fetch(`https://api.microlink.io/?url=${encodeURIComponent(url)}`)
-    .then(res => res.json())
-    .then(data => {
-      if (data.status !== 'success') return;
+          .then(res => res.json())
+          .then(data => {
+            if (data.status !== 'success') return;
 
-      const { title, image } = data.data;
+            const { title, image } = data.data;
+            const titleEl = document.getElementById("site-title");
+            const imageEl = document.getElementById("preview-image");
 
-      const titleEl = document.getElementById("site-title");
-      const imageEl = document.getElementById("preview-image");
-
-      if (title && titleEl) titleEl.textContent = title;
-      if (image?.url && imageEl) {
-        imageEl.src = image.url;
-        imageEl.style.display = 'block';
+            if (title && titleEl) titleEl.textContent = title;
+            if (image?.url && imageEl) {
+              imageEl.src = image.url;
+              imageEl.style.display = 'block';
+            }
+          })
+          .catch(err => {
+            console.error("Error fetching preview:", err);
+            if (previewImage) {
+              previewImage.src = '';
+              previewImage.style.display = 'none';
+            }
+          });
       }
-    })
-    .catch(err => {
-      console.error("Erro ao buscar preview:", err);
-      if (previewImage) {
-        previewImage.src = '';
-        previewImage.style.display = 'none';
-      }
-    });
-}
-        
 
-      // Handle favicon with better validation
+      // Handle favicon
       if (siteFavicon) {
-        // Check if domain is valid and not localhost/extension
         const isValidDomain = domain && 
                              domain !== 'localhost' && 
                              !domain.startsWith('127.') && 
@@ -122,7 +116,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             console.log("Favicon failed for domain:", domain);
             this.style.display = 'none';
             this.src = '';
-            this.onerror = null; // Prevent multiple error calls
+            this.onerror = null;
           };
         } else {
           console.log("Invalid domain for favicon:", domain);
@@ -143,10 +137,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // Function to update preview time (simplified)
+  // Function to update preview time
   function updatePreview() {
     if (currentHours === 0 && currentMinutes === 0) {
-      if (previewTime) previewTime.textContent = "Please set a delay time";
+      if (previewTime) previewTime.textContent = "Please set a delay time (optional)";
       return;
     }
 
@@ -160,14 +154,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // Initialize time picker (embedded)
+  // Initialize time picker
   function initTimePicker() {
     if (!hoursWheel || !minutesWheel) {
       console.error("Time picker wheels not found");
       return;
     }
 
-    // Generate hours with padding items above and below
+    // Generate hours items
     const hoursItems = hoursWheel.querySelector('.wheel-items');
     if (hoursItems) {
       // Add padding items above (21, 22, 23)
@@ -198,7 +192,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     }
     
-    // Generate minutes with padding items above and below
+    // Generate minutes items
     const minutesItems = minutesWheel.querySelector('.wheel-items');
     if (minutesItems) {
       // Add padding items above (57, 58, 59)
@@ -229,18 +223,18 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     }
     
-    // Add scroll behavior with infinite loop support
+    // Setup wheel scroll behavior
     setupWheelScroll(hoursWheel, (value) => {
       currentHours = value;
       updatePreview();
       console.log("Hours updated:", value);
-    }, 24, 3); // 24 main items, 3 padding items on each side
+    }, 24, 3);
     
     setupWheelScroll(minutesWheel, (value) => {
       currentMinutes = value;
       updatePreview();
       console.log("Minutes updated:", value);
-    }, 60, 3); // 60 main items, 3 padding items on each side
+    }, 60, 3);
   }
 
   function setupWheelScroll(wheel, callback, mainItemsCount, paddingCount) {
@@ -250,22 +244,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!container) return;
     
     const items = container.querySelectorAll('.wheel-item');
-    
-    // Start at the first real item (after padding)
     let currentIndex = paddingCount;
     
     function updateSelection(index) {
-      // Remove previous selection
       items.forEach(item => item.classList.remove('center', 'selected'));
       
-      // Add selection to current item
       if (items[index]) {
         items[index].classList.add('center', 'selected');
         const value = parseInt(items[index].dataset.value);
         callback(value);
       }
       
-      // Update transform - properly center the selected item
       const itemHeight = 20;
       const containerHeight = 60;
       const centerPosition = Math.floor(containerHeight / 2) - Math.floor(itemHeight / 2);
@@ -274,7 +263,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       
       // Handle infinite scroll repositioning
       if (index < paddingCount) {
-        // Scrolled too far up, jump to equivalent position at the end
         setTimeout(() => {
           const equivalentIndex = mainItemsCount + index;
           currentIndex = equivalentIndex;
@@ -288,7 +276,6 @@ document.addEventListener("DOMContentLoaded", async () => {
           });
         }, 50);
       } else if (index >= mainItemsCount + paddingCount) {
-        // Scrolled too far down, jump to equivalent position at the beginning
         setTimeout(() => {
           const equivalentIndex = paddingCount + (index - mainItemsCount - paddingCount);
           currentIndex = equivalentIndex;
@@ -312,7 +299,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
     });
     
-    // Wheel scroll with infinite looping
+    // Wheel scroll
     wheel.addEventListener('wheel', (e) => {
       e.preventDefault();
       if (e.deltaY > 0) {
@@ -323,21 +310,18 @@ document.addEventListener("DOMContentLoaded", async () => {
       updateSelection(currentIndex);
     });
     
-    // Initialize at first real item (0 value)
     updateSelection(currentIndex);
   }
 
-  // Load folders into select dropdown
+  // Load folders
   async function loadFolders() {
     try {
       const result = await chrome.storage.local.get(["folders"]);
       const folders = result.folders || [];
       
       if (folderSelect) {
-        // Clear existing options except the first one
         folderSelect.innerHTML = '<option value="">Select folder</option>';
         
-        // Add folders to select
         folders.forEach(folder => {
           const option = document.createElement("option");
           option.value = folder.id;
@@ -356,7 +340,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       const result = await chrome.storage.local.get(["folders"]);
       const folders = result.folders || [];
       
-      // Check if folder already exists
       if (folders.some(folder => folder.name.toLowerCase() === name.toLowerCase())) {
         showError("Folder already exists");
         return null;
@@ -380,7 +363,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // Handle new folder button click
+  // Generate unique ID
+  function generateId() {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+  }
+
+  // Handle new folder functionality
   if (newFolderBtn && newFolderInput) {
     newFolderBtn.addEventListener("click", () => {
       newFolderBtn.classList.add("hidden");
@@ -388,32 +376,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       newFolderInput.focus();
     });
 
-    // Handle clicking outside or escape to cancel
-    document.addEventListener("click", (e) => {
-      if (!newFolderInput.contains(e.target) && !newFolderBtn.contains(e.target)) {
-        if (!newFolderInput.value.trim()) {
-          hideNewFolderInput();
-        }
-      }
-    });
-
-    newFolderInput.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") {
-        hideNewFolderInput();
-      }
-    });
-  }
-
-  function hideNewFolderInput() {
-    if (newFolderInput && newFolderBtn) {
-      newFolderInput.classList.add("hidden");
-      newFolderInput.value = "";
-      newFolderBtn.classList.remove("hidden");
-    }
-  }
-
-  // Handle new folder creation - only add if element exists
-  if (newFolderInput) {
     newFolderInput.addEventListener("keypress", async (e) => {
       if (e.key === "Enter") {
         const folderName = newFolderInput.value.trim();
@@ -421,29 +383,25 @@ document.addEventListener("DOMContentLoaded", async () => {
           const folderId = await createFolder(folderName);
           if (folderId && folderSelect) {
             folderSelect.value = folderId;
-            hideNewFolderInput();
+            newFolderInput.classList.add("hidden");
+            newFolderInput.value = "";
+            newFolderBtn.classList.remove("hidden");
             showSuccess("Folder created and selected!");
           }
         }
       }
     });
-  }
 
-  // Clear new folder input when selecting existing folder - only add if elements exist
-  if (folderSelect && newFolderInput) {
-    folderSelect.addEventListener("change", () => {
-      if (folderSelect.value) {
-        hideNewFolderInput();
+    newFolderInput.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        newFolderInput.classList.add("hidden");
+        newFolderInput.value = "";
+        newFolderBtn.classList.remove("hidden");
       }
     });
   }
 
-  // Generate unique ID
-  function generateId() {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2);
-  }
-
-  // Handle reminder setting with validation
+  // Handle save button
   if (setReminderBtn) {
     setReminderBtn.addEventListener("click", async () => {
       const url = currentTabUrl;
@@ -462,20 +420,25 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
       }
 
-      if (currentHours === 0 && currentMinutes === 0) {
-        showError("Please set a delay time using the time picker");
-        return;
-      }
-
       try {
-        await saveReminder(url, customTitle, currentHours, currentMinutes, selectedFolderId);
-        
-        const timeText = currentHours > 0 ? 
-          `${currentHours}h ${currentMinutes}m` : 
-          `${currentMinutes}m`;
-        
-        if (successMessage) {
-          successMessage.textContent = `You'll be reminded in ${timeText}`;
+        if (currentHours > 0 || currentMinutes > 0) {
+          // Save with reminder
+          await saveReminder(url, customTitle, currentHours, currentMinutes, selectedFolderId);
+          
+          const timeText = currentHours > 0 ? 
+            `${currentHours}h ${currentMinutes}m` : 
+            `${currentMinutes}m`;
+          
+          if (successMessage) {
+            successMessage.textContent = `You'll be reminded in ${timeText}`;
+          }
+        } else {
+          // Save without reminder
+          await saveLinkWithoutReminder(url, customTitle, selectedFolderId);
+          
+          if (successMessage) {
+            successMessage.textContent = "Link saved successfully!";
+          }
         }
         
         if (successModal) {
@@ -483,8 +446,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
         
       } catch (error) {
-        console.error("Error saving reminder:", error);
-        showError("Failed to save reminder");
+        console.error("Error saving:", error);
+        showError("Failed to save link");
       }
     });
   }
@@ -505,16 +468,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  // Close modal when clicking outside
-  if (successModal) {
-    successModal.addEventListener('click', (e) => {
-      if (e.target === successModal) {
-        window.close();
-      }
-    });
-  }
-
-  // Handle settings button click
   if (settingsBtn) {
     settingsBtn.addEventListener("click", () => {
       chrome.tabs.create({
@@ -532,8 +485,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   console.log("Popup initialized successfully");
 });
 
+// Save with reminder
 async function saveReminder(url, customTitle, hours, minutes, folderId = null) {
-  // Get current tab title if no custom title provided
   let title = customTitle;
   if (!title) {
     try {
@@ -547,12 +500,10 @@ async function saveReminder(url, customTitle, hours, minutes, folderId = null) {
     }
   }
 
-  // Calculate reminder date based on delay
   const now = new Date();
   const delayInMs = (hours * 60 + minutes) * 60 * 1000;
   const reminderDate = new Date(now.getTime() + delayInMs);
 
-  // Create reminder object
   const reminder = {
     id: Date.now().toString(),
     url: url,
@@ -564,13 +515,11 @@ async function saveReminder(url, customTitle, hours, minutes, folderId = null) {
     folderId: folderId || null
   };
 
-  // Save to storage
   const result = await chrome.storage.local.get(["reminders"]);
   const reminders = result.reminders || [];
   reminders.push(reminder);
   await chrome.storage.local.set({ reminders });
 
-  // Create alarm for notification
   await chrome.alarms.create(reminder.id, {
     when: reminderDate.getTime(),
   });
@@ -578,6 +527,38 @@ async function saveReminder(url, customTitle, hours, minutes, folderId = null) {
   console.log("Reminder saved:", reminder);
 }
 
+// Save without reminder
+async function saveLinkWithoutReminder(url, customTitle, folderId = null) {
+  let title = customTitle;
+  if (!title) {
+    try {
+      const [tab] = await chrome.tabs.query({
+        active: true,
+        currentWindow: true,
+      });
+      title = tab ? tab.title : "Saved Link";
+    } catch (error) {
+      title = "Saved Link";
+    }
+  }
+
+  const linkData = {
+    id: Date.now().toString(),
+    url: url,
+    title: title,
+    createdAt: new Date().toISOString(),
+    folderId: folderId || null
+  };
+
+  const result = await chrome.storage.local.get(["reminders"]);
+  const reminders = result.reminders || [];
+  reminders.push(linkData);
+  await chrome.storage.local.set({ reminders });
+
+  console.log("Link saved without reminder:", linkData);
+}
+
+// Notification functions
 function showError(message) {
   showNotification(message, "error");
 }
@@ -587,33 +568,30 @@ function showSuccess(message) {
 }
 
 function showNotification(message, type) {
-  // Remove existing notification
   const existing = document.querySelector(".notification");
   if (existing) {
     existing.remove();
   }
 
-  // Create notification element
   const notification = document.createElement("div");
   notification.className = `notification ${type}`;
   notification.textContent = message;
   notification.style.cssText = `
-        position: fixed;
-        top: 10px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: ${type === "error" ? "#ff4444" : "#44ff44"};
-        color: white;
-        padding: 8px 16px;
-        border-radius: 4px;
-        font-size: 12px;
-        z-index: 1000;
-        animation: slideDown 0.3s ease-out;
-    `;
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: ${type === "error" ? "#ff4444" : "#44ff44"};
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 12px;
+    z-index: 1000;
+    animation: slideDown 0.3s ease-out;
+  `;
 
   document.body.appendChild(notification);
 
-  // Remove after 3 seconds
   setTimeout(() => {
     if (notification.parentNode) {
       notification.remove();
@@ -624,15 +602,15 @@ function showNotification(message, type) {
 // Add CSS for notification animation
 const style = document.createElement("style");
 style.textContent = `
-    @keyframes slideDown {
-        from {
-            opacity: 0;
-            transform: translateX(-50%) translateY(-20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateX(-50%) translateY(-20px);
     }
+    to {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  }
 `;
 document.head.appendChild(style);
