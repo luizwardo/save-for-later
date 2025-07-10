@@ -1644,7 +1644,7 @@ body {
 }
 
 .toggle-btn.expanded .down-arrow {
-  transform: rotate(90deg);
+  transform: rotate(180deg);
 }
 
 .main-list.collapsed,
