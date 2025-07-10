@@ -14,14 +14,18 @@
 
     <div class="section">
         <div id="preview" class="site-preview">
-            <div id="preview">
-                <div id="preview-header">  
-                    <img id="site-favicon" width="16" height="16" /> 
-                    <h3 id="site-title"></h3>
+            <div class="site-preview-section">
+                <div class="site-info">
+                    <div class="site-header">
+                        <img id="site-favicon" class="site-favicon" width="16" height="16" /> 
+                        <h3 id="site-title" class="preview-title"></h3>
+                        <span id="site-domain" class="site-domain"></span>
+                    </div>
                 </div>
-                    <p id="site-domain"></p>
-                    <p id="site-description"></p>
-                    <img id="preview-image"/>
+                <div class="preview-image-container">
+                    <div id="preview-loading" class="preview-loading">Loading...</div>
+                    <img id="preview-image" style="display: none;"/>
+                </div>
             </div>
         </div>
 
