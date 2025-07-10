@@ -1,53 +1,226 @@
 // Background script to handle alarms and notifications
 chrome.runtime.onInstalled.addListener(() => {
   console.log("Save for Later extension installed");
+  // Set initial icon based on current theme
+  updateIconBasedOnTheme();
 });
 
-// TODO: Remove
+// Function to detect and update icon based on theme
+async function updateIconBasedOnTheme() {
+  try {
+    // Get stored theme preference
+    const result = await chrome.storage.local.get(["isDarkTheme"]);
+    const isDark = result.isDarkTheme;
+    
+    if (isDark !== undefined) {
+      // Use stored preference
+      const iconPath = isDark ? 'assets/icon.png' : 'assets/icon_128_white.png';
+      
+      await chrome.action.setIcon({
+        path: {
+          "48": iconPath,
+          "128": iconPath
+        }
+      });
+      
+      console.log(`Icon updated to ${isDark ? 'dark' : 'light'} theme from storage`);
+    } else {
+      // Default to light theme icon
+      const iconPath = 'assets/icon_128.png';
+      
+      await chrome.action.setIcon({
+        path: {
+          "48": iconPath,
+          "128": iconPath
+        }
+      });
+      
+      console.log("Icon updated to default (light) theme");
+    }
+  } catch (error) {
+    console.error("Error updating icon:", error);
+  }
+}
+
 // Handle messages from content scripts/popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "testNotification") {
-    testNotification();
+  console.log("Background received message:", request);
+  
+  if (request.action === "updateTheme") {
+    updateIconBasedOnTheme();
     sendResponse({ success: true });
+  } else if (request.action === "setIcon") {
+    setIconFromPopup(request.iconPath, request.isDark);
+    sendResponse({ success: true });
+  } else if (request.action === "capturePreview") {
+    // Handle tab screenshot capture
+    captureTabPreview(request.url, request.forceCapture)
+      .then(result => {
+        sendResponse(result);
+      })
+      .catch(error => {
+        console.error("Error capturing preview:", error);
+        sendResponse({ success: false, error: error.message });
+      });
+    return true; // Keep the message channel open for async response
+  } else if (request.action === "getStoredPreview") {
+    // Get stored preview for a URL
+    getStoredPreview(request.url)
+      .then(result => {
+        sendResponse(result);
+      })
+      .catch(error => {
+        console.error("Error getting stored preview:", error);
+        sendResponse({ success: false, error: error.message });
+      });
+    return true; // Keep the message channel open for async response
   }
 });
-async function testNotification() {
+
+// Function to capture tab preview
+async function captureTabPreview(url, forceCapture = false) {
   try {
-    console.log("Creating test notification...");
-    const notificationId = "test-" + Date.now();
-
-    await chrome.notifications.create(notificationId, {
-      type: "basic",
-      iconUrl: "assets/icon.png",
-      title: "Test Notification",
-      message: "This is a test notification from Save for Later extension",
-      buttons: [{ title: "Test Button 1" }, { title: "Test Button 2" }],
+    console.log("Capturing preview for URL:", url);
+    
+    // Generate storage key for this URL
+    const previewKey = `preview_${encodeURIComponent(url)}`;
+    
+    // Check if we already have a preview stored (unless force capture)
+    if (!forceCapture) {
+      const stored = await chrome.storage.local.get([previewKey]);
+      if (stored[previewKey]) {
+        console.log("Using stored preview for:", url);
+        return {
+          success: true,
+          dataUrl: stored[previewKey],
+          cached: true
+        };
+      }
+    }
+    
+    // Get the active tab
+    const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!activeTab) {
+      throw new Error("No active tab found");
+    }
+    
+    // Verify the tab URL matches what we're trying to capture
+    if (activeTab.url !== url) {
+      console.warn("Active tab URL doesn't match requested URL", { active: activeTab.url, requested: url });
+    }
+    
+    // Capture the visible tab
+    const dataUrl = await chrome.tabs.captureVisibleTab(activeTab.windowId, {
+      format: 'png',
+      quality: 85
     });
-
-    console.log("Test notification created with ID:", notificationId);
-
-    // Auto-clear after 5 seconds
-    setTimeout(() => {
-      chrome.notifications.clear(notificationId);
-    }, 5000);
+    
+    if (!dataUrl) {
+      throw new Error("Failed to capture tab screenshot");
+    }
+    
+    // Store the captured image
+    await chrome.storage.local.set({
+      [previewKey]: dataUrl
+    });
+    
+    console.log("Preview captured and stored for:", url);
+    
+    return {
+      success: true,
+      dataUrl: dataUrl,
+      cached: false
+    };
+    
   } catch (error) {
-    console.error("Error creating test notification:", error);
+    console.error("Error capturing tab preview:", error);
+    throw error;
+  }
+}
+
+// Function to get stored preview
+async function getStoredPreview(url) {
+  try {
+    const previewKey = `preview_${encodeURIComponent(url)}`;
+    const result = await chrome.storage.local.get([previewKey]);
+    
+    if (result[previewKey]) {
+      return {
+        success: true,
+        dataUrl: result[previewKey],
+        cached: true
+      };
+    } else {
+      return {
+        success: false,
+        message: "No stored preview found"
+      };
+    }
+  } catch (error) {
+    console.error("Error getting stored preview:", error);
+    throw error;
+  }
+}
+
+// Function to clear stored preview for a URL
+async function clearStoredPreview(url) {
+  try {
+    const previewKey = `preview_${encodeURIComponent(url)}`;
+    await chrome.storage.local.remove([previewKey]);
+    console.log("Cleared stored preview for:", url);
+    return { success: true };
+  } catch (error) {
+    console.error("Error clearing stored preview:", error);
+    throw error;
+  }
+}
+
+async function setIconFromPopup(iconPath, isDark) {
+  try {
+    console.log("setIconFromPopup called with:", { iconPath, isDark });
+    
+    await chrome.action.setIcon({
+      path: {
+        "48": iconPath,
+        "128": iconPath
+      }
+    });
+    
+    // Store the current theme preference
+    await chrome.storage.local.set({ isDarkTheme: isDark });
+    
+    console.log(`Icon updated for ${isDark ? 'dark' : 'light'} theme via popup`);
+  } catch (error) {
+    console.error("Error updating icon from popup:", error);
+  }
+}
+
+async function getThemeIcon() {
+  try {
+    const result = await chrome.storage.local.get(["isDarkTheme"]);
+    const isDark = result.isDarkTheme || false;
+    return isDark ? 'assets/icon.png' : 'assets/icon_128_white.png';
+  } catch (error) {
+    console.error("Error getting theme preference:", error);
+    return 'assets/icon.png'; // Default fallback
   }
 }
 
 function showNotification(title, message, reminderId) {
   const notificationId = `reminder_${reminderId}`;
   
-  chrome.notifications.create(notificationId, {
-    type: 'basic',
-    iconUrl: 'assets/icon.png',
-    title: title,
-    message: message,
-    priority: 2,
-    buttons: [
-      { title: 'Open Link' },
-      { title: 'Dismiss' }
-    ]
+  getThemeIcon().then(iconUrl => {
+    chrome.notifications.create(notificationId, {
+      type: 'basic',
+      iconUrl: iconUrl,
+      title: title,
+      message: message,
+      priority: 2,
+      buttons: [
+        { title: 'Open Link' },
+        { title: 'Dismiss' }
+      ]
+    });
   });
 
   // Auto-clear after 5 seconds
@@ -105,10 +278,13 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
     const reminder = reminders.find((r) => r.id === alarm.name);
 
     if (reminder) {
+      // Get the appropriate icon for current theme
+      const iconUrl = await getThemeIcon();
+      
       // Create notification
       await chrome.notifications.create(reminder.id, {
         type: "basic",
-        iconUrl: "assets/icon.png",
+        iconUrl: iconUrl,
         title: "Save for Later Reminder",
         message: `Time to check: ${reminder.title}`,
         buttons: [{ title: "Open Link" }, { title: "Dismiss" }],
@@ -180,6 +356,9 @@ chrome.notifications.onClicked.addListener(async (notificationId) => {
 // Clean up old alarms and notifications on startup
 chrome.runtime.onStartup.addListener(async () => {
   try {
+    // Update icon based on current theme
+    await updateIconBasedOnTheme();
+    
     // Get all reminders
     const result = await chrome.storage.local.get(["reminders"]);
     const reminders = result.reminders || [];
@@ -190,7 +369,7 @@ chrome.runtime.onStartup.addListener(async () => {
     // Clean up alarms for reminders that no longer exist
     for (const alarm of alarms) {
       const reminderExists = reminders.some((r) => r.id === alarm.name);
-      if (!reminderExists) {
+      if (!reminderExists && alarm.name !== 'autoDeleteCheck') {
         await chrome.alarms.clear(alarm.name);
       }
     }
