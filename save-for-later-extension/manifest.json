@@ -12,9 +12,8 @@
     "notifications"
   ],
   "host_permissions": [
-  "<all_urls>",
-  "https://api.microlink.io/*"
-],
+    "<all_urls>"
+  ],
   "background": {
     "service_worker": "src/background.js"
   },
@@ -25,7 +24,8 @@
   "action": {
     "default_popup": "src/popup/popup.html",
     "default_icon": {
-      "48": "src/assets/icon.png"
+      "                                                                                                                         48": "src/assets/icon.png",
+      "128": "src/assets/icon.png"
     }
   }
 }
