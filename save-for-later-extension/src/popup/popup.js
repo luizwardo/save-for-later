@@ -227,7 +227,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Function to update preview time
   function updatePreview() {
     if (currentHours === 0 && currentMinutes === 0) {
-      if (previewTime) previewTime.textContent = "Please set a delay time (optional)";
+      if (previewTime) previewTime.textContent = "No reminder set - will save immediately";
+      updateButtonText();
       return;
     }
 
@@ -238,6 +239,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (previewTime) {
       previewTime.textContent = reminderTime.toLocaleDateString() + " at " + 
         reminderTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    }
+    updateButtonText();
+  }
+
+  // Function to update button text based on selection
+  function updateButtonText() {
+    if (setReminderBtn) {
+      if (currentHours === 0 && currentMinutes === 0) {
+        setReminderBtn.textContent = "Save Link";
+      } else {
+        setReminderBtn.textContent = "Save with Reminder";
+      }
     }
   }
 
