@@ -46,19 +46,18 @@
             <p>Set a reminder (optional) or save immediately:</p>
         </div>
         <div class="timeline-section">
-            <div class="time-picker-wheels">
-                <div class="time-wheel">
-                    <div class="wheel-label">Hours</div>
-                    <div class="wheel-container" id="hours-wheel">
-                        <div class="wheel-items"></div>
+            <div class="datetime-picker">
+                <div class="date-time-group">
+                    <div class="input-group">
+                        <label for="reminder-date">Date:</label>
+                        <input type="date" id="reminder-date" class="date-input">
+                    </div>
+                    <div class="input-group">
+                        <label for="reminder-time">Time:</label>
+                        <input type="time" id="reminder-time" class="time-input">
                     </div>
                 </div>
-                <div class="time-wheel">
-                    <div class="wheel-label">Minutes</div>
-                    <div class="wheel-container" id="minutes-wheel">
-                        <div class="wheel-items"></div>
-                    </div>
-                </div>
+                <button type="button" id="clear-datetime" class="clear-btn">Clear</button>
             </div>
             <div class="reminder-preview-block">
                 <span id="preview-time">No reminder set - will save immediately</span>

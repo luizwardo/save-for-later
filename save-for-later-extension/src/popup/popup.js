@@ -14,9 +14,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   const newFolderInput = document.getElementById("new-folder");
   const newFolderBtn = document.getElementById("new-folder-btn");
 
-  // Time picker elements
-  const hoursWheel = document.getElementById('hours-wheel');
-  const minutesWheel = document.getElementById('minutes-wheel');
+  // DateTime picker elements
+  const reminderDate = document.getElementById('reminder-date');
+  const reminderTime = document.getElementById('reminder-time');
+  const clearDateTimeBtn = document.getElementById('clear-datetime');
   
   // Modal elements
   const successModal = document.getElementById('success-modal');
@@ -24,8 +25,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const openSettingsBtn = document.getElementById('open-settings-btn');
   const closePopupBtn = document.getElementById('close-popup-btn');
   
-  let currentHours = 0;
-  let currentMinutes = 0;
+  let selectedDateTime = null;
   let currentTabUrl = '';
   let currentTabTitle = '';
 
@@ -226,19 +226,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Function to update preview time
   function updatePreview() {
-    if (currentHours === 0 && currentMinutes === 0) {
+    if (!selectedDateTime) {
       if (previewTime) previewTime.textContent = "No reminder set - will save immediately";
       updateButtonText();
       return;
     }
 
-    const now = new Date();
-    const reminderTime = new Date(
-      now.getTime() + (currentHours * 60 + currentMinutes) * 60 * 1000
-    );
     if (previewTime) {
-      previewTime.textContent = reminderTime.toLocaleDateString() + " at " + 
-        reminderTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      previewTime.textContent = selectedDateTime.toLocaleDateString() + " at " + 
+        selectedDateTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     }
     updateButtonText();
   }
@@ -246,7 +242,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Function to update button text based on selection
   function updateButtonText() {
     if (setReminderBtn) {
-      if (currentHours === 0 && currentMinutes === 0) {
+      if (!selectedDateTime) {
         setReminderBtn.textContent = "Save Link";
       } else {
         setReminderBtn.textContent = "Save with Reminder";
@@ -254,163 +250,63 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // Initialize time picker
-  function initTimePicker() {
-    if (!hoursWheel || !minutesWheel) {
-      console.error("Time picker wheels not found");
+  // Initialize datetime picker
+  function initDateTimePicker() {
+    if (!reminderDate || !reminderTime || !clearDateTimeBtn) {
+      console.error("DateTime picker elements not found");
       return;
     }
 
-    // Generate hours items
-    const hoursItems = hoursWheel.querySelector('.wheel-items');
-    if (hoursItems) {
-      // Add padding items above (21, 22, 23)
-      for (let i = 21; i <= 23; i++) {
-        const item = document.createElement('div');
-        item.className = 'wheel-item padding-item';
-        item.textContent = i;
-        item.dataset.value = i;
-        hoursItems.appendChild(item);
-      }
-      
-      // Add main items (0-23)
-      for (let i = 0; i <= 23; i++) {
-        const item = document.createElement('div');
-        item.className = 'wheel-item';
-        item.textContent = i;
-        item.dataset.value = i;
-        hoursItems.appendChild(item);
-      }
-      
-      // Add padding items below (0, 1, 2)
-      for (let i = 0; i <= 2; i++) {
-        const item = document.createElement('div');
-        item.className = 'wheel-item padding-item';
-        item.textContent = i;
-        item.dataset.value = i;
-        hoursItems.appendChild(item);
-      }
-    }
-    
-    // Generate minutes items
-    const minutesItems = minutesWheel.querySelector('.wheel-items');
-    if (minutesItems) {
-      // Add padding items above (57, 58, 59)
-      for (let i = 57; i <= 59; i++) {
-        const item = document.createElement('div');
-        item.className = 'wheel-item padding-item';
-        item.textContent = i.toString().padStart(2, '0');
-        item.dataset.value = i;
-        minutesItems.appendChild(item);
-      }
-      
-      // Add main items (0-59)
-      for (let i = 0; i <= 59; i++) {
-        const item = document.createElement('div');
-        item.className = 'wheel-item';
-        item.textContent = i.toString().padStart(2, '0');
-        item.dataset.value = i;
-        minutesItems.appendChild(item);
-      }
-      
-      // Add padding items below (0, 1, 2)
-      for (let i = 0; i <= 2; i++) {
-        const item = document.createElement('div');
-        item.className = 'wheel-item padding-item';
-        item.textContent = i.toString().padStart(2, '0');
-        item.dataset.value = i;
-        minutesItems.appendChild(item);
-      }
-    }
-    
-    // Setup wheel scroll behavior
-    setupWheelScroll(hoursWheel, (value) => {
-      currentHours = value;
-      updatePreview();
-      console.log("Hours updated:", value);
-    }, 24, 3);
-    
-    setupWheelScroll(minutesWheel, (value) => {
-      currentMinutes = value;
-      updatePreview();
-      console.log("Minutes updated:", value);
-    }, 60, 3);
-  }
+    // Set minimum date to today
+    const today = new Date();
+    const todayString = today.toISOString().split('T')[0];
+    reminderDate.min = todayString;
 
-  function setupWheelScroll(wheel, callback, mainItemsCount, paddingCount) {
-    if (!wheel) return;
-    
-    const container = wheel.querySelector('.wheel-items');
-    if (!container) return;
-    
-    const items = container.querySelectorAll('.wheel-item');
-    let currentIndex = paddingCount;
-    
-    function updateSelection(index) {
-      items.forEach(item => item.classList.remove('center', 'selected'));
+    // Event listeners for date and time inputs
+    function updateSelectedDateTime() {
+      const dateValue = reminderDate.value;
+      const timeValue = reminderTime.value;
       
-      if (items[index]) {
-        items[index].classList.add('center', 'selected');
-        const value = parseInt(items[index].dataset.value);
-        callback(value);
-      }
-      
-      const itemHeight = 20;
-      const containerHeight = 60;
-      const centerPosition = Math.floor(containerHeight / 2) - Math.floor(itemHeight / 2);
-      const offset = centerPosition - (index * itemHeight);
-      container.style.transform = `translateY(${offset}px)`;
-      
-      // Handle infinite scroll repositioning
-      if (index < paddingCount) {
-        setTimeout(() => {
-          const equivalentIndex = mainItemsCount + index;
-          currentIndex = equivalentIndex;
-          const newOffset = centerPosition - (equivalentIndex * itemHeight);
-          container.style.transition = 'none';
-          container.style.transform = `translateY(${newOffset}px)`;
-          items.forEach(item => item.classList.remove('center', 'selected'));
-          items[equivalentIndex].classList.add('center', 'selected');
-          requestAnimationFrame(() => {
-            container.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-          });
-        }, 50);
-      } else if (index >= mainItemsCount + paddingCount) {
-        setTimeout(() => {
-          const equivalentIndex = paddingCount + (index - mainItemsCount - paddingCount);
-          currentIndex = equivalentIndex;
-          const newOffset = centerPosition - (equivalentIndex * itemHeight);
-          container.style.transition = 'none';
-          container.style.transform = `translateY(${newOffset}px)`;
-          items.forEach(item => item.classList.remove('center', 'selected'));
-          items[equivalentIndex].classList.add('center', 'selected');
-          requestAnimationFrame(() => {
-            container.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-          });
-        }, 50);
-      }
-    }
-    
-    // Click handlers
-    items.forEach((item, index) => {
-      item.addEventListener('click', () => {
-        currentIndex = index;
-        updateSelection(currentIndex);
-      });
-    });
-    
-    // Wheel scroll
-    wheel.addEventListener('wheel', (e) => {
-      e.preventDefault();
-      if (e.deltaY > 0) {
-        currentIndex++;
+      if (dateValue && timeValue) {
+        const combinedDateTime = new Date(`${dateValue}T${timeValue}`);
+        const now = new Date();
+        
+        // Check if selected time is in the past
+        if (combinedDateTime <= now) {
+          showError("Please select a future date and time");
+          selectedDateTime = null;
+        } else {
+          selectedDateTime = combinedDateTime;
+        }
       } else {
-        currentIndex--;
+        selectedDateTime = null;
       }
-      updateSelection(currentIndex);
+      
+      updatePreview();
+    }
+
+    reminderDate.addEventListener('change', updateSelectedDateTime);
+    reminderTime.addEventListener('change', updateSelectedDateTime);
+
+    // Clear button functionality
+    clearDateTimeBtn.addEventListener('click', () => {
+      reminderDate.value = '';
+      reminderTime.value = '';
+      selectedDateTime = null;
+      updatePreview();
     });
-    
-    updateSelection(currentIndex);
+
+    // Set default time if date is selected but time is not
+    reminderDate.addEventListener('change', () => {
+      if (reminderDate.value && !reminderTime.value) {
+        // Set default time to current time + 1 hour
+        const now = new Date();
+        now.setHours(now.getHours() + 1);
+        const timeString = now.toTimeString().slice(0, 5);
+        reminderTime.value = timeString;
+        updateSelectedDateTime();
+      }
+    });
   }
 
   // Load folders
@@ -521,16 +417,15 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
 
       try {
-        if (currentHours > 0 || currentMinutes > 0) {
+        if (selectedDateTime) {
           // Save with reminder
-          await saveReminder(url, customTitle, currentHours, currentMinutes, selectedFolderId);
+          await saveReminderWithDateTime(url, customTitle, selectedDateTime, selectedFolderId);
           
-          const timeText = currentHours > 0 ? 
-            `${currentHours}h ${currentMinutes}m` : 
-            `${currentMinutes}m`;
+          const dateText = selectedDateTime.toLocaleDateString();
+          const timeText = selectedDateTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
           
           if (successMessage) {
-            successMessage.textContent = `You'll be reminded in ${timeText}`;
+            successMessage.textContent = `You'll be reminded on ${dateText} at ${timeText}`;
           }
         } else {
           // Save without reminder
@@ -581,7 +476,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   await loadFolders();
   console.log("Folders loaded");
   
-  initTimePicker();
+  initDateTimePicker();
   console.log("Time picker initialized");
   
   updatePreview();
@@ -661,6 +556,42 @@ async function saveReminder(url, customTitle, hours, minutes, folderId = null) {
   });
 
   console.log("Reminder saved:", reminder);
+}
+
+// Save with specific datetime
+async function saveReminderWithDateTime(url, customTitle, reminderDateTime, folderId = null) {
+  let title = customTitle;
+  if (!title) {
+    try {
+      const [tab] = await chrome.tabs.query({
+        active: true,
+        currentWindow: true,
+      });
+      title = tab ? tab.title : "Saved Link";
+    } catch (error) {
+      title = "Saved Link";
+    }
+  }
+
+  const reminder = {
+    id: Date.now().toString(),
+    url: url,
+    title: title,
+    reminderDate: reminderDateTime.toISOString(),
+    createdAt: new Date().toISOString(),
+    folderId: folderId || null
+  };
+
+  const result = await chrome.storage.local.get(["reminders"]);
+  const reminders = result.reminders || [];
+  reminders.push(reminder);
+  await chrome.storage.local.set({ reminders });
+
+  await chrome.alarms.create(reminder.id, {
+    when: reminderDateTime.getTime(),
+  });
+
+  console.log("Reminder saved with specific datetime:", reminder);
 }
 
 // Save without reminder
