@@ -2,13 +2,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   console.log("Popup loading started...");
   
   // Initialize theme
-  await initializeTheme();
+  // Theme now automatically follows system preference
   
   // Get all elements
   const setReminderBtn = document.getElementById("set-reminder");
   const settingsBtn = document.getElementById("settings");
   const previewTime = document.getElementById("preview-time");
-  const themeToggleBtn = document.getElementById("theme-toggle");
   
   // Folder elements
   const folderSelect = document.getElementById("folder-select");
@@ -19,6 +18,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   const reminderDate = document.getElementById('reminder-date');
   const reminderTime = document.getElementById('reminder-time');
   const clearDateTimeBtn = document.getElementById('clear-datetime');
+  const reminderToggle = document.getElementById('reminder-toggle');
+  const datetimeContainer = document.getElementById('datetime-container');
   
   // Modal elements
   const successModal = document.getElementById('success-modal');
@@ -295,6 +296,21 @@ document.addEventListener("DOMContentLoaded", async () => {
       reminderTime.value = '';
       selectedDateTime = null;
       updatePreview();
+    });
+
+    // Reminder toggle functionality
+    reminderToggle.addEventListener('click', () => {
+      const isExpanded = reminderToggle.classList.contains('expanded');
+      
+      if (isExpanded) {
+        // Collapse
+        reminderToggle.classList.remove('expanded');
+        datetimeContainer.classList.add('hidden');
+      } else {
+        // Expand
+        reminderToggle.classList.add('expanded');
+        datetimeContainer.classList.remove('hidden');
+      }
     });
 
     // Set default time if date is selected but time is not
@@ -683,51 +699,6 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-// Theme management functions
-async function initializeTheme() {
-  try {
-    const result = await chrome.storage.sync.get(['theme']);
-    const currentTheme = result.theme || 'dark';
-    applyTheme(currentTheme);
-    
-    // Add event listener for theme toggle
-    const themeToggleBtn = document.getElementById("theme-toggle");
-    if (themeToggleBtn) {
-      themeToggleBtn.addEventListener('click', toggleTheme);
-    }
-  } catch (error) {
-    console.error('Error initializing theme:', error);
-    // Default to dark theme if error
-    applyTheme('dark');
-  }
-}
-
-function applyTheme(theme) {
-  document.body.setAttribute('data-theme', theme);
-  updateThemeIcon(theme);
-}
-
-function updateThemeIcon(theme) {
-  const themeToggleBtn = document.getElementById("theme-toggle");
-  if (themeToggleBtn) {
-    themeToggleBtn.textContent = theme === 'dark' ? '☀️' : '🌙';
-    themeToggleBtn.title = theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme';
-  }
-}
-
-async function toggleTheme() {
-  try {
-    const result = await chrome.storage.sync.get(['theme']);
-    const currentTheme = result.theme || 'dark';
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    
-    await chrome.storage.sync.set({ theme: newTheme });
-    applyTheme(newTheme);
-    
-    console.log('Theme changed to:', newTheme);
-  } catch (error) {
-    console.error('Error toggling theme:', error);
-  }
-}
+// Theme functions removed - now using system preference detection
 
 console.log("Popup script loaded successfully");

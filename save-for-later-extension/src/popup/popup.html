@@ -10,7 +10,6 @@
     <header>
         <h3>Save for Later</h3>
         <div class="header-actions">
-            <button id="theme-toggle" class="theme-toggle-btn" title="Toggle theme">🌙</button>
             <button id="settings" class="action-btn"></button>
         </div>
     </header>
@@ -46,22 +45,31 @@
 
     <div class="section">
         <div class="timeline-section">
-            <div class="datetime-picker">
-                <div class="date-time-group">
-                    <div class="input-group">
-                        <label for="reminder-date">Date:</label>
-                        <input type="date" id="reminder-date" class="date-input">
-                    </div>
-                    <div class="input-group">
-                        <label for="reminder-time">Time:</label>
-                        <input type="time" id="reminder-time" class="time-input">
+            <!-- Toggle button for datetime picker -->
+            <div id="reminder-toggle" class="reminder-toggle-btn">
+                <span>Set Reminder</span>
+                <img src="../assets/down-arrow.png" alt="Toggle" class="toggle-icon">
+            </div>
+            
+            <!-- DateTime picker (initially hidden) -->
+            <div id="datetime-container" class="datetime-container hidden">
+                <div class="datetime-picker">
+                    <div class="date-time-group">
+                        <div class="input-group">
+                            <label for="reminder-date">Date:</label>
+                            <input type="date" id="reminder-date" class="date-input">
+                        </div>
+                        <div class="input-group">
+                            <label for="reminder-time">Time:</label>
+                            <input type="time" id="reminder-time" class="time-input">
+                        </div>
                     </div>
                 </div>
+                <div class="reminder-preview-block">
+                    <span id="preview-time">No reminder set - will save immediately</span>
+                </div>
+                <button type="button" id="clear-datetime" class="clear-btn">Clear</button>
             </div>
-            <div class="reminder-preview-block">
-                <span id="preview-time">No reminder set - will save immediately</span>
-            </div>
-            <button type="button" id="clear-datetime" class="clear-btn">Clear</button>
         </div>
         
         <button id="set-reminder">SAVE LINK</button>

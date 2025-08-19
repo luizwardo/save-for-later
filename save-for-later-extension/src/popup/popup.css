@@ -1,6 +1,5 @@
-/* Theme Variables */
+/* Theme Variables - Light theme by default */
 :root {
-  /* Light Theme */
   --bg-primary: #ffffff;
   --bg-secondary: #f8f9fa;
   --bg-tertiary: #e9ecef;
@@ -16,21 +15,23 @@
   --modal-backdrop: rgba(0, 0, 0, 0.5);
 }
 
-[data-theme="dark"] {
-  /* Dark Theme */
-  --bg-primary: #1e1e1e;
-  --bg-secondary: #2d2d2d;
-  --bg-tertiary: #3a3a3a;
-  --text-primary: #e0e0e0;
-  --text-secondary: #b0b0b0;
-  --text-accent: #4c9aff;
-  --text-button: #e0e0e0;
-  --border-primary: rgba(255, 255, 255, 0.08);
-  --border-secondary: rgba(255, 255, 255, 0.05);
-  --button-bg: rgba(255, 255, 255, 0.05);
-  --button-hover: rgba(255, 255, 255, 0.1);
-  --modal-bg: rgba(30, 30, 30, 0.95);
-  --modal-backdrop: rgba(0, 0, 0, 0.7);
+/* Dark theme using system preference */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-primary: #1e1e1e;
+    --bg-secondary: #2d2d2d;
+    --bg-tertiary: #3a3a3a;
+    --text-primary: #e0e0e0;
+    --text-secondary: #b0b0b0;
+    --text-accent: #4c9aff;
+    --text-button: #e0e0e0;
+    --border-primary: rgba(255, 255, 255, 0.08);
+    --border-secondary: rgba(255, 255, 255, 0.05);
+    --button-bg: rgba(255, 255, 255, 0.05);
+    --button-hover: rgba(255, 255, 255, 0.1);
+    --modal-bg: rgba(30, 30, 30, 0.95);
+    --modal-backdrop: rgba(0, 0, 0, 0.7);
+  }
 }
 
 body {
@@ -66,26 +67,6 @@ header {
   display: flex;
   gap: 8px;
   align-items: center;
-}
-
-.theme-toggle-btn {
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  border: 1px solid var(--border-primary);
-  border-radius: 6px;
-  background: var(--button-bg);
-  cursor: pointer;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-}
-
-.theme-toggle-btn:hover {
-  background: var(--button-hover);
-  transform: translateY(-1px);
 }
 
 h3 {
@@ -136,7 +117,11 @@ h3 {
 }
 
 .section {
-  margin-bottom: 10px;
+  margin-bottom: 14px;
+}
+
+.section:last-child {
+  margin-bottom: 0;
 }
 
 .reminder-info {
@@ -281,7 +266,7 @@ button:active {
 }
 
 #set-reminder {
-  margin-bottom: 20px;
+  margin-bottom: 0;
 }
 
 #fake-date-input {
@@ -342,8 +327,8 @@ body {
   background: var(--button-bg);
   border: 1px solid var(--border-secondary);
   border-radius: 6px;
-  padding: 16px 12px;
-  margin-bottom: 10px;
+  padding: 18px 14px;
+  margin-bottom: 14px;
   transition: all 0.2s ease;
 }
 
@@ -355,7 +340,7 @@ body {
 .site-preview-section {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;
 }
 
 .site-info {
@@ -448,7 +433,7 @@ body {
 /* Timeline Styling - Clean design */
 .timeline-section {
     margin: 8px 0;
-    padding: 16px 12px;
+    padding: 18px 14px;
     background: var(--button-bg);
     border-radius: 6px;
     border: 1px solid var(--border-secondary);
@@ -458,6 +443,61 @@ body {
 .timeline-section:hover {
     background: var(--button-hover);
     border-color: var(--border-primary);
+}
+
+/* Reminder Toggle Button */
+.reminder-toggle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: var(--button-bg);
+    border: 1px solid var(--border-primary);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 8px;
+    user-select: none;
+}
+
+.reminder-toggle-btn:hover {
+    background: var(--button-hover);
+    transform: translateY(-1px);
+}
+
+.reminder-toggle-btn span:first-child {
+    font-weight: 500;
+    color: var(--text-primary);
+    font-size: 13px;
+}
+
+.toggle-icon {
+    width: 14px;
+    height: 14px;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    filter: var(--icon-filter);
+    opacity: 0.7;
+}
+
+.reminder-toggle-btn.expanded .toggle-icon {
+    transform: rotate(180deg);
+}
+
+/* DateTime Container */
+.datetime-container {
+    overflow: hidden;
+    transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                opacity 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    transform-origin: top;
+    opacity: 1;
+    transform: scaleY(1);
+    margin-bottom: 8px;
+}
+
+.datetime-container.hidden {
+    opacity: 0;
+    transform: scaleY(0);
+    margin-bottom: 0;
 }
 
 /* DateTime Picker Styles - Clean design */
@@ -637,7 +677,7 @@ body {
 }
 
 .reminder-preview-block {
-    padding: 12px;
+    padding: 8px 12px;
     background: var(--button-bg);
     border-radius: 4px;
     border: 1px solid var(--border-secondary);
