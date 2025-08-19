@@ -12,86 +12,56 @@
       <div class="sidebar-header">
         <div class="logo">
           <img src="../assets/icon_128_white.png" alt="Save for Later">
+          <span>Save for Later</span>
         </div>
-          
-        </button>
       </div>
       
-      <nav class="sidebar-nav">
-        <div class="nav-group">
-          <div class="nav-group-title">
-            <span class="folder-title-with-icon">
-              <img src="../assets/select-all.png" alt="All" class="main-icon">
-              Main
-            </span>
-            <button id="toggle-main-btn" class="toggle-btn">
-              <img src="../assets/down-arrow.png" alt="arrow" class="down-arrow">
+      <nav class="headbar-nav">
+        <!-- Main Menu -->
+        <div class="nav-dropdown">
+          <button class="nav-menu-item">
+            <span>Main</span>
+          </button>
+          <div class="dropdown-content">
+            <button class="dropdown-item active" data-section="all-links">
+              <span>All</span>
+              <span class="nav-count">0</span>
+            </button>
+            <button class="dropdown-item" data-section="reminders">
+              <span>Reminders</span>
+              <span class="nav-count">0</span>
             </button>
           </div>
-          <ul class="nav-list main-list collapsed" id="main-nav">
-            <li>
-              <button class="nav-item active" data-section="all-links">
-                <span class="nav-icon">
-                  <img src="../assets/burger.png" alt="Menu">
-                </span>
-                <span class="nav-text">All</span>
-                <span class="nav-count">0</span>
-              </button>
-            </li>
-            <li>
-              <button class="nav-item" data-section="reminders">
-                <span class="nav-icon">
-                  <img src="../assets/clock.png" alt="Clock">
-                </span>
-                <span class="nav-text">Reminders</span>
-                <span class="nav-count">0</span>
-              </button>
-            </li>
-          </ul>
         </div>
 
-        <div class="nav-group">
-          <div class="nav-group-title">
-            <span class="folder-title-with-icon">
-              <img src="../assets/folder.png" alt="Folder" class="folder-icon">
-              Folders
-            </span>
-            <div class="folder-controls">
+        <!-- Folders Menu -->
+        <div class="nav-dropdown">
+          <button class="nav-menu-item">
+            <span>Folders</span>
+          </button>
+          <div class="dropdown-content">
+            <div class="dropdown-header">
+              <span>Folders</span>
               <button id="add-folder-btn" class="add-btn">+</button>
-              <button id="toggle-folders-btn" class="toggle-btn">
-                <img src="../assets/down-arrow.png" alt="arrow" class="down-arrow">
-              </button>           
+            </div>
+            <div id="folders-dropdown-nav">
+              <div class="dropdown-item empty-folders">
+                <span class="empty-text">No folders yet</span>
+              </div>
             </div>
           </div>
-          <ul class="nav-list folder-list collapsed" id="folders-nav">
-            <li class="empty-folders">
-              <span class="empty-text">No folders yet</span>
-            </li>
-          </ul>
         </div>
 
-        <div class="nav-group">
-          <div class="nav-group-title">
-            <span class="folder-title-with-icon">
-              <img src="../assets/setting.png" alt="Settings" class="settings-icon">
-              Settings
-            </span>
-            <button id="toggle-settings-btn" class="toggle-btn">
-              <img src="../assets/down-arrow.png" alt="arrow" class="down-arrow">
+        <!-- Settings Menu -->
+        <div class="nav-dropdown">
+          <button class="nav-menu-item">
+            <span>Settings</span>
+          </button>
+          <div class="dropdown-content">
+            <button class="dropdown-item" data-section="settings">
+              <span>General</span>
             </button>
           </div>
-          <ul class="nav-list settings-list collapsed" id="settings-nav">
-            <li>
-              <button class="nav-item" data-section="debug">
-                <span class="nav-text">Debug Console</span>
-              </button>
-            </li>
-            <li>
-              <button class="nav-item" data-section="settings">
-                <span class="nav-text">General</span>
-              </button>
-            </li>
-          </ul>
         </div>
       </nav>
     </aside>
@@ -99,7 +69,6 @@
     <main class="main-content">
       <div id="all-links-section" class="content-section active">
         <header class="content-header">
-          <img src="../assets/burger.png" alt="All Links" class="header-icon">
           <h1>Saved</h1>
           <div class="header-actions">
           </div>
@@ -111,7 +80,6 @@
 
       <div id="reminders-section" class="content-section">
         <header class="content-header">
-          <img src="../assets/clock.png" alt="Reminders" class="header-icon">
           <h1>For Later</h1>
           <div class="header-actions">
             <div class="reminder-filter-controls">
@@ -134,7 +102,6 @@
 
       <div id="folder-content-section" class="content-section">
         <header class="content-header">
-          <img src="../assets/folder.png" alt="Folder" class="header-icon">
           <h1 id="folder-title">Folder Name</h1>
           <div class="header-actions">
           </div>
@@ -146,11 +113,8 @@
 
       <div id="debug-section" class="content-section">
         <header class="content-header">
-          <img src="../assets/wrench.png" alt="Debug" class="header-icon">
-          <h1>Debug Console</h1>
-        </header>
+       </header>
         <div class="section">
-          <h2>Debug & Testing</h2>
           <button id="test-notification-btn" class="action-btn primary">Test Notification</button>
           <div id="debug-info" class="debug-info"></div>
         </div>
@@ -161,7 +125,6 @@
 
       <div id="settings-section" class="content-section">
         <header class="content-header">
-          <img src="../assets/setting.png" alt="Settings" class="header-icon">
           <h1>General</h1>
           <div class="header-actions">
           </div>

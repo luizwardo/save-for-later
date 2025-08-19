@@ -1,4 +1,6 @@
 document.addEventListener("DOMContentLoaded", async () => {
+  // Theme now automatically follows system preference
+
   const upcomingRemindersContainer =
     document.getElementById("upcoming-reminders");
   const pastRemindersContainer = document.getElementById("past-reminders");
@@ -7,16 +9,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   const testNotificationBtn = document.getElementById("test-notification-btn");
   const debugInfo = document.getElementById("debug-info");
 
-  // New sidebar elements
-  const navItems = document.querySelectorAll(".nav-item");
+  // New headbar elements
+  const navItems = document.querySelectorAll(".dropdown-item");
   const contentSections = document.querySelectorAll(".content-section");
   const addFolderBtn = document.getElementById("add-folder-btn");
   const addFolderModal = document.getElementById("add-folder-modal");
   const createFolderBtn = document.getElementById("create-folder-btn");
   const cancelFolderBtn = document.getElementById("cancel-folder-btn");
   const newFolderInput = document.getElementById("new-folder-input");
-  const foldersNav = document.getElementById("folders-nav");
-  const toggleFoldersBtn = document.getElementById("toggle-folders-btn");
+  const foldersDropdownNav = document.getElementById("folders-dropdown-nav");
 
   const autoDeleteCheckbox = document.getElementById("auto-delete");
 
@@ -189,8 +190,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     // Handle dynamic folder items
-    if (foldersNav) {
-      foldersNav.addEventListener("click", (e) => {
+    if (foldersDropdownNav) {
+      foldersDropdownNav.addEventListener("click", (e) => {
         const folderItem = e.target.closest(".folder-item");
         if (folderItem) {
           e.preventDefault();
@@ -204,8 +205,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Switch between content sections
   function switchToSection(sectionName, activeNavItem) {
-    // Remove active from all nav items
-    document.querySelectorAll(".nav-item").forEach((item) => item.classList.remove("active"));
+    // Remove active from all dropdown items
+    document.querySelectorAll(".dropdown-item").forEach((item) => item.classList.remove("active"));
     if (activeNavItem) {
       activeNavItem.classList.add("active");
     }
@@ -322,7 +323,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       const reminders = result.reminders || [];
 
       if (folders.length === 0) {
-        foldersNav.innerHTML = '<li class="empty-folders"><span class="empty-text">No folders yet</span></li>';
+        foldersDropdownNav.innerHTML = '<div class="dropdown-item empty-folders"><span class="empty-text">No folders yet</span></div>';
         return;
       }
 
@@ -336,17 +337,15 @@ document.addEventListener("DOMContentLoaded", async () => {
       const folderHTML = folders
         .map(
           (folder) => `
-        <li>
-          <button class="nav-item folder-item" data-section="folder-content" data-folder-id="${folder.id}">
-            <span class="nav-text">${escapeHtml(folder.name)}</span>
+          <button class="dropdown-item folder-item" data-section="folder-content" data-folder-id="${folder.id}">
+            <span>${escapeHtml(folder.name)}</span>
             <span class="nav-count">${folderCounts[folder.id] || 0}</span>
           </button>
-        </li>
       `
         )
         .join("");
 
-      foldersNav.innerHTML = folderHTML;
+      foldersDropdownNav.innerHTML = folderHTML;
     } catch (error) {
       console.error("Error loading folders:", error);
     }
@@ -807,7 +806,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       <div class="reminder-item clickable-card" data-id="${link.id}" data-url="${link.url}" id="${cardId}">
         <div class="reminder-content">
           <div class="site-preview-section">
-            <div class="preview-image" id="preview-${link.id}" style="background: #2a2a2a; display: flex; align-items: center; justify-content: center; color: #666; font-size: 12px;">
+            <div class="preview-image" id="preview-${link.id}" 
               <span>Loading...</span>
             </div>
           </div>
@@ -1673,7 +1672,8 @@ function initFolderToggle() {
       });
     }
 
-    // Folders section toggle  
+    // Folders section toggle (disabled for headbar dropdown design)
+    /*
     const toggleFoldersBtn = document.getElementById("toggle-folders-btn");
     const foldersNav = document.getElementById("folders-nav");
     
@@ -1690,6 +1690,7 @@ function initFolderToggle() {
         }
       });
     }
+    */
 
     // Settings section toggle
     const toggleSettingsBtn = document.getElementById("toggle-settings-btn");
@@ -1709,3 +1710,5 @@ function initFolderToggle() {
       });
     }
   }
+
+// Theme functions removed - now using system preference detection
