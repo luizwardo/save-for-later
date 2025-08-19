@@ -9,7 +9,10 @@
 <body>
     <header>
         <h3>Save for Later</h3>
-        <button id="settings" class="action-btn"></button>
+        <div class="header-actions">
+            <button id="theme-toggle" class="theme-toggle-btn" title="Toggle theme">🌙</button>
+            <button id="settings" class="action-btn"></button>
+        </div>
     </header>
 
     <div class="section">
@@ -24,7 +27,7 @@
                 </div>
                 <div class="preview-image-container">
                     <div id="preview-loading" class="preview-loading">Loading...</div>
-                    <img id="preview-image" style="display: none;"/>
+                    <img id="preview-image"/>
                 </div>
             </div>
         </div>
@@ -35,16 +38,13 @@
                 <option value="">Select folder</option>
             </select>
             <button id="new-folder-btn" class="add-folder-btn" type="button">
-                <span class="plus-icon">+</span>
+                <span class="plus-icon"> + </span>
             </button>
             <input type="text" id="new-folder" class="new-folder-input hidden" placeholder="Folder name">
         </div>
     </div>
 
     <div class="section">
-        <div class="reminder-info">
-            <p>Set a reminder (optional) or save immediately:</p>
-        </div>
         <div class="timeline-section">
             <div class="datetime-picker">
                 <div class="date-time-group">
@@ -57,14 +57,14 @@
                         <input type="time" id="reminder-time" class="time-input">
                     </div>
                 </div>
-                <button type="button" id="clear-datetime" class="clear-btn">Clear</button>
             </div>
             <div class="reminder-preview-block">
                 <span id="preview-time">No reminder set - will save immediately</span>
             </div>
+            <button type="button" id="clear-datetime" class="clear-btn">Clear</button>
         </div>
         
-        <button id="set-reminder">Save Link</button>
+        <button id="set-reminder">SAVE LINK</button>
         <div class="action-buttons">
         </div>
     </div>

@@ -1,13 +1,14 @@
 document.addEventListener("DOMContentLoaded", async () => {
   console.log("Popup loading started...");
   
-  // Update theme icon when popup opens
-  updateThemeIcon();
+  // Initialize theme
+  await initializeTheme();
   
   // Get all elements
   const setReminderBtn = document.getElementById("set-reminder");
   const settingsBtn = document.getElementById("settings");
   const previewTime = document.getElementById("preview-time");
+  const themeToggleBtn = document.getElementById("theme-toggle");
   
   // Folder elements
   const folderSelect = document.getElementById("folder-select");
@@ -243,7 +244,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   function updateButtonText() {
     if (setReminderBtn) {
       if (!selectedDateTime) {
-        setReminderBtn.textContent = "Save Link";
+        setReminderBtn.textContent = "SAVE LINK";
       } else {
         setReminderBtn.textContent = "Save with Reminder";
       }
@@ -432,7 +433,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           await saveLinkWithoutReminder(url, customTitle, selectedFolderId);
           
           if (successMessage) {
-            successMessage.textContent = "Link saved successfully!";
+            successMessage.textContent = "";
           }
         }
         
@@ -681,5 +682,52 @@ style.textContent = `
   }
 `;
 document.head.appendChild(style);
+
+// Theme management functions
+async function initializeTheme() {
+  try {
+    const result = await chrome.storage.sync.get(['theme']);
+    const currentTheme = result.theme || 'dark';
+    applyTheme(currentTheme);
+    
+    // Add event listener for theme toggle
+    const themeToggleBtn = document.getElementById("theme-toggle");
+    if (themeToggleBtn) {
+      themeToggleBtn.addEventListener('click', toggleTheme);
+    }
+  } catch (error) {
+    console.error('Error initializing theme:', error);
+    // Default to dark theme if error
+    applyTheme('dark');
+  }
+}
+
+function applyTheme(theme) {
+  document.body.setAttribute('data-theme', theme);
+  updateThemeIcon(theme);
+}
+
+function updateThemeIcon(theme) {
+  const themeToggleBtn = document.getElementById("theme-toggle");
+  if (themeToggleBtn) {
+    themeToggleBtn.textContent = theme === 'dark' ? '☀️' : '🌙';
+    themeToggleBtn.title = theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme';
+  }
+}
+
+async function toggleTheme() {
+  try {
+    const result = await chrome.storage.sync.get(['theme']);
+    const currentTheme = result.theme || 'dark';
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    
+    await chrome.storage.sync.set({ theme: newTheme });
+    applyTheme(newTheme);
+    
+    console.log('Theme changed to:', newTheme);
+  } catch (error) {
+    console.error('Error toggling theme:', error);
+  }
+}
 
 console.log("Popup script loaded successfully");
