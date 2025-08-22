@@ -18,8 +18,8 @@
     "service_worker": "src/background.js"
   },
 "icons": {
-  "48": "src/assets/icon.png",
-  "128": "src/assets/icon.png"
+  "48": "src/assets/sfl-light.png",
+  "128": "src/assets/sfl-light.png"
 },
   "action": {
     "default_popup": "src/popup/popup.html"
