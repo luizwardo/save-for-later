@@ -14,7 +14,7 @@ async function updateIconBasedOnTheme() {
     
     if (isDark !== undefined) {
       // Use stored preference
-      const iconPath = isDark ? 'assets/icon.png' : 'assets/icon_128_white.png';
+      const iconPath = isDark ? 'assets/icon.png' : 'assets/sfl-dark.png';
       
       await chrome.action.setIcon({
         path: {
@@ -26,7 +26,7 @@ async function updateIconBasedOnTheme() {
       console.log(`Icon updated to ${isDark ? 'dark' : 'light'} theme from storage`);
     } else {
       // Default to light theme icon
-      const iconPath = 'assets/icon_128.png';
+      const iconPath = 'assets/sfl-light.png';
       
       await chrome.action.setIcon({
         path: {
@@ -199,7 +199,7 @@ async function getThemeIcon() {
   try {
     const result = await chrome.storage.local.get(["isDarkTheme"]);
     const isDark = result.isDarkTheme || false;
-    return isDark ? 'assets/icon.png' : 'assets/icon_128_white.png';
+    return isDark ? 'assets/icon.png' : 'assets/sfl-dark.png';
   } catch (error) {
     console.error("Error getting theme preference:", error);
     return 'assets/icon.png'; // Default fallback
