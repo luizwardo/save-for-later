@@ -107,13 +107,6 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
-  content: url("../assets/sfl-light.png");
-}
-
-@media (prefers-color-scheme: dark) {
-  .sidebar-header .logo {
-    content: url("../assets/sfl-dark.png");
-  }
 }
 
 .sidebar-header .logo {
