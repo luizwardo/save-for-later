@@ -30,6 +30,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   let selectedDateTime = null;
   let currentTabUrl = '';
   let currentTabTitle = '';
+  let currentTabWindowId = null;
+  let currentTabFavicon = '';
 
   // Get current tab URL and title when popup opens
   try {
@@ -42,7 +44,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       console.log("Tab found:", tab.url);
       currentTabUrl = tab.url;
       currentTabTitle = tab.title;
-      loadSitePreview(tab.url, tab.title);
+      currentTabWindowId = tab.windowId ?? null;
+      currentTabFavicon = tab.favIconUrl || '';
+      loadSitePreview(tab.url, tab.title, { windowId: currentTabWindowId, favIconUrl: currentTabFavicon });
     } else {
       console.log("No active tab found");
     }
@@ -87,7 +91,24 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // Function to load site preview
-  function loadSitePreview(url, title) {
+  // Safely attempt to capture a preview screenshot of the visible tab
+  async function tryCapturePreview(windowId) {
+    try {
+      if (!chrome?.tabs?.captureVisibleTab) return null;
+      const options = { format: 'jpeg', quality: 60 };
+      // windowId is optional; if provided, prefer it
+      const dataUrl = await chrome.tabs.captureVisibleTab(windowId ?? undefined, options);
+      if (typeof dataUrl === 'string' && dataUrl.startsWith('data:image')) {
+        return dataUrl;
+      }
+      return null;
+    } catch (e) {
+      console.warn('captureVisibleTab failed, will fallback:', e);
+      return null;
+    }
+  }
+
+  function loadSitePreview(url, title, tabInfo = {}) {
     console.log("loadSitePreview called with:", url, title);
     
     const siteTitle = document.getElementById("site-title");
@@ -95,6 +116,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const siteFavicon = document.getElementById("site-favicon");
     const previewImage = document.getElementById("preview-image");
     const previewLoading = document.getElementById("preview-loading");
+    const { windowId = null, favIconUrl = '' } = tabInfo || {};
 
     console.log("Elements found:", { siteTitle, siteDomain, siteFavicon, previewImage, previewLoading });
     console.log("Loading site preview for:", url);
@@ -144,12 +166,12 @@ document.addEventListener("DOMContentLoaded", async () => {
                          domain.length > 2;
 
       if (isValidDomain) {
-        // Small favicon icon
+        // Small favicon icon: prefer Chrome tab.favIconUrl if available, else fallbacks
         if (siteFavicon) {
-          const smallFaviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=16`;
+          const smallFaviconUrl = favIconUrl || `https://www.google.com/s2/favicons?domain=${domain}&sz=16`;
           siteFavicon.src = smallFaviconUrl;
           siteFavicon.style.display = 'block';
-          
+
           siteFavicon.onerror = function() {
             console.log("Small favicon failed for domain:", domain);
             this.style.display = 'none';
@@ -158,38 +180,67 @@ document.addEventListener("DOMContentLoaded", async () => {
           };
         }
 
-        // Large favicon as preview image
-        if (previewImage) {
-          const largeFaviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
-          
-          previewImage.onload = function() {
-            console.log("Large favicon loaded successfully for:", domain);
-            if (previewLoading) previewLoading.style.display = 'none';
-            previewImage.style.display = 'block';
-          };
-          
-          previewImage.onerror = function() {
-            console.log("Large favicon failed, trying alternative for domain:", domain);
-            // Try alternative favicon sources
-            const altFaviconUrl = `https://icon.horse/icon/${domain}`;
-            
+        // Try Chrome API screenshot first, then fallback to favicon providers
+        (async () => {
+          let shown = false;
+          try {
+            const cap = await Promise.race([
+              tryCapturePreview(windowId),
+              new Promise(resolve => setTimeout(() => resolve(null), 1200))
+            ]);
+
+            if (cap && previewImage) {
+              previewImage.onload = function() {
+                if (previewLoading) previewLoading.style.display = 'none';
+                previewImage.style.display = 'block';
+                checkAndMarkSmallImage(previewImage);
+              };
+              previewImage.onerror = function() {
+                // If capture fails to load, fallback next
+                shown = false;
+                this.onerror = null;
+              };
+              previewImage.src = cap;
+              shown = true;
+            }
+          } catch (e) {
+            console.warn('Preview capture flow error:', e);
+          }
+
+          if (shown) return;
+
+          // Fallback: large favicon
+          if (previewImage) {
+            const largeFaviconUrl = favIconUrl || `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+
             previewImage.onload = function() {
-              console.log("Alternative favicon loaded for:", domain);
               if (previewLoading) previewLoading.style.display = 'none';
               previewImage.style.display = 'block';
+              checkAndMarkSmallImage(previewImage);
             };
-            
+
             previewImage.onerror = function() {
-              console.log("All favicon sources failed for domain:", domain);
-              if (previewLoading) previewLoading.style.display = 'none';
-              previewImage.style.display = 'none';
+              console.log("Large/favicon URL failed, trying alternative for domain:", domain);
+              const altFaviconUrl = `https://icon.horse/icon/${domain}`;
+
+              previewImage.onload = function() {
+                if (previewLoading) previewLoading.style.display = 'none';
+                previewImage.style.display = 'block';
+                checkAndMarkSmallImage(previewImage);
+              };
+
+              previewImage.onerror = function() {
+                console.log("All favicon sources failed for domain:", domain);
+                if (previewLoading) previewLoading.style.display = 'none';
+                previewImage.style.display = 'none';
+              };
+
+              previewImage.src = altFaviconUrl;
             };
-            
-            previewImage.src = altFaviconUrl;
-          };
-          
-          previewImage.src = largeFaviconUrl;
-        }
+
+            previewImage.src = largeFaviconUrl;
+          }
+        })();
       } else {
         console.log("Invalid domain for favicon:", domain);
         if (siteFavicon) {
@@ -507,8 +558,8 @@ function updateThemeIcon() {
   try {
     console.log("updateThemeIcon called");
     const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const iconPath = prefersDark ? 'assets/icon_128_white.png' : 'assets/icon_128.png';
-    
+    const iconPath = prefersDark ? 'assets/sfl-dark.png' : 'assets/sfl-light.png';
+
     console.log("Theme detected - Dark mode:", prefersDark);
     console.log("Icon path selected:", iconPath);
     
