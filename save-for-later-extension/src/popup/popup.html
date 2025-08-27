@@ -39,7 +39,10 @@
             <button id="new-folder-btn" class="add-folder-btn" type="button">
                 <span class="plus-icon"> + </span>
             </button>
-            <input type="text" id="new-folder" class="new-folder-input hidden" placeholder="Folder name">
+            <div class="input-wrapper hidden" id="new-folder-wrapper">
+                <input type="text" id="new-folder" class="new-folder-input">
+                <label for="new-folder" class="floating-label">Folder name:</label>
+            </div>
         </div>
     </div>
 
@@ -72,7 +75,7 @@
             </div>
         </div>
         
-        <button id="set-reminder">SAVE LINK</button>
+        <button id="set-reminder">SAVE</button>
         <div class="action-buttons">
         </div>
     </div>
