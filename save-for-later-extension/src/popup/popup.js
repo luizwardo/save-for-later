@@ -13,6 +13,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const folderSelect = document.getElementById("folder-select");
   const newFolderInput = document.getElementById("new-folder");
   const newFolderBtn = document.getElementById("new-folder-btn");
+  const newFolderWrapper = document.getElementById("new-folder-wrapper");
 
   // DateTime picker elements
   const reminderDate = document.getElementById('reminder-date');
@@ -296,7 +297,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   function updateButtonText() {
     if (setReminderBtn) {
       if (!selectedDateTime) {
-        setReminderBtn.textContent = "SAVE LINK";
+        setReminderBtn.textContent = "SAVE";
       } else {
         setReminderBtn.textContent = "Save with Reminder";
       }
@@ -433,12 +434,26 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // Handle new folder functionality
-  if (newFolderBtn && newFolderInput) {
+  if (newFolderBtn && newFolderInput && newFolderWrapper) {
+    // Function to handle floating label
+    function updateFloatingLabel() {
+      if (newFolderInput.value.trim() !== '' || document.activeElement === newFolderInput) {
+        newFolderWrapper.classList.add('active');
+      } else {
+        newFolderWrapper.classList.remove('active');
+      }
+    }
+
     newFolderBtn.addEventListener("click", () => {
       newFolderBtn.classList.add("hidden");
-      newFolderInput.classList.remove("hidden");
+      newFolderWrapper.classList.remove("hidden");
       newFolderInput.focus();
+      updateFloatingLabel();
     });
+
+    newFolderInput.addEventListener("focus", updateFloatingLabel);
+    newFolderInput.addEventListener("blur", updateFloatingLabel);
+    newFolderInput.addEventListener("input", updateFloatingLabel);
 
     newFolderInput.addEventListener("keypress", async (e) => {
       if (e.key === "Enter") {
@@ -447,7 +462,8 @@ document.addEventListener("DOMContentLoaded", async () => {
           const folderId = await createFolder(folderName);
           if (folderId && folderSelect) {
             folderSelect.value = folderId;
-            newFolderInput.classList.add("hidden");
+            newFolderWrapper.classList.add("hidden");
+            newFolderWrapper.classList.remove("active");
             newFolderInput.value = "";
             newFolderBtn.classList.remove("hidden");
             showSuccess("Folder created and selected!");
@@ -458,7 +474,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     newFolderInput.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
-        newFolderInput.classList.add("hidden");
+        newFolderWrapper.classList.add("hidden");
+        newFolderWrapper.classList.remove("active");
         newFolderInput.value = "";
         newFolderBtn.classList.remove("hidden");
       }
