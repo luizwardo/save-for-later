@@ -39,9 +39,9 @@
 }
 
 body {
-  width: 360px;
-  height: 490px;
-  padding: 16px 12px;
+  width: 300px;
+  height: 380px;
+  padding: 14px 10px;
   margin: 0;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   background: var(--bg-primary);
