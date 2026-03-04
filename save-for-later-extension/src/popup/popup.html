@@ -30,6 +30,7 @@
                 </div>
             </div>
         </div>
+    </div>
 
     <div class="section">
         <div class="folder-container">
@@ -47,37 +48,7 @@
     </div>
 
     <div class="section">
-        <div class="timeline-section">
-            <!-- Toggle button for datetime picker -->
-            <div id="reminder-toggle" class="reminder-toggle-btn">
-                <label for="reminder-toggle">Set reminder</label>
-                <img src="../assets/down-arrow.png" alt="Toggle" class="toggle-icon">
-            </div>
-            
-            <!-- DateTime picker (initially hidden) -->
-            <div id="datetime-container" class="datetime-container hidden">
-                <div class="datetime-picker">
-                    <div class="date-time-group">
-                        <div class="input-group">
-                            <label for="reminder-date">Date:</label>
-                            <input type="date" id="reminder-date" class="date-input">
-                        </div>
-                        <div class="input-group">
-                            <label for="reminder-time">Time:</label>
-                            <input type="time" id="reminder-time" class="time-input">
-                        </div>
-                    </div>
-                </div>
-                <div class="reminder-preview-block">
-                    <span id="preview-time">No reminder set - will save immediately</span>
-                </div>
-                <button type="button" id="clear-datetime" class="clear-btn">Clear</button>
-            </div>
-        </div>
-        
         <button id="set-reminder">SAVE</button>
-        <div class="action-buttons">
-        </div>
     </div>
 
     <script src="popup.js"></script>
@@ -89,7 +60,7 @@
                 <h3>Link Saved Successfully!!</h3>
             </div>
             <div class="modal-body">
-                <p id="success-message">Your reminder has been set.</p>
+                <p id="success-message">Link saved successfully.</p>
             </div>
             <div class="modal-actions">
                 <button id="open-settings-btn" class="btn-primary">Open Settings</button>
