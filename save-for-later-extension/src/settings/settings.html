@@ -8,149 +8,28 @@
 
 <body>
   <div class="app-layout">
-    <aside class="sidebar">
-      <div class="sidebar-header">
-        
-      </div>
-      
-      <nav class="headbar-nav">
-        <!-- logo -->
-        <div class="logo">
-          <span>SAVE FOR LATER</span>
-        </div>
-        <!-- Main Menu -->
-        <div class="nav-dropdown">
-          <button class="nav-menu-item">
-            <span>Main</span>
-          </button>
-          <div class="dropdown-content">
-            <button class="dropdown-item active" data-section="all-links">
-              <span>All</span>
-              <span class="nav-count">0</span>
-            </button>
-            <button class="dropdown-item" data-section="reminders">
-              <span>Reminders</span>
-              <span class="nav-count">0</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Folders Menu -->
-        <div class="nav-dropdown">
-          <button class="nav-menu-item">
-            <span>Folders</span>
-          </button>
-          <div class="dropdown-content">
-            <div class="dropdown-header">
-              <span>Folders</span>
-              <button id="add-folder-btn" class="add-btn">+</button>
-            </div>
-            <div id="folders-dropdown-nav">
-              <div class="dropdown-item empty-folders">
-                <span class="empty-text">No folders yet</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Settings Menu -->
-        <div class="nav-dropdown">
-          <button class="nav-menu-item">
-            <span>Settings</span>
-          </button>
-          <div class="dropdown-content">
-            <button class="dropdown-item" data-section="settings">
-              <span>General</span>
-            </button>
-          </div>
-        </div>
-      </nav>
-    </aside>
-
     <main class="main-content">
-      <div id="all-links-section" class="content-section active">
-        <header class="content-header">
-          <h1>Saved</h1>
-          <div class="header-actions">
-          </div>
-        </header>
+      <header class="content-header">
+        <h1>Saved Links</h1>
+      </header>
+      <div class="content-body">
         <div id="all-links-grid" class="links-grid">
           <div class="empty-state">No links saved yet</div>
-        </div>
-      </div>
-
-      <div id="reminders-section" class="content-section">
-        <header class="content-header">
-          <h1>For Later</h1>
-          <div class="header-actions">
-            <div class="reminder-filter-controls">
-            </div>
-          </div>
-        </header>
-        <div class="section">
-          <h2>Upcoming Reminders</h2>
-          <div id="upcoming-reminders" class="reminders-list">
-            <div class="loading">Loading reminders...</div>
-          </div>
-        </div>
-        <div class="section">
-          <h2>Past Reminders</h2>
-          <div id="past-reminders" class="reminders-list">
-            <div class="loading">Loading reminders...</div>
-          </div>
-        </div>
-      </div>
-
-      <div id="folder-content-section" class="content-section">
-        <header class="content-header">
-          <h1 id="folder-title">Folder Name</h1>
-          <div class="header-actions">
-          </div>
-        </header>
-        <div id="folder-links-grid" class="links-grid">
-          <div class="empty-state">This folder is empty</div>
-        </div>
-      </div>
-
-      <div id="debug-section" class="content-section">
-        <header class="content-header">
-       </header>
-        <div class="section">
-          <button id="test-notification-btn" class="action-btn primary">Test Notification</button>
-          <div id="debug-info" class="debug-info"></div>
-        </div>
-        <div class="section">
-          <button id="clear-all-btn" class="danger-btn">Clear All Reminders</button>
-        </div>
-      </div>
-
-      <div id="settings-section" class="content-section">
-        <header class="content-header">
-          <h1>General</h1>
-          <div class="header-actions">
-          </div>
-        </header>
-        <div class="section">
-          <h2>General</h2>
-          <div class="settings-grid">
-            <div class="setting-item">
-              <span>Auto-delete past reminders</span>
-              <input type="checkbox" id="auto-delete">
-            </div>
-          </div>
         </div>
       </div>
     </main>
   </div>
 
-  <!-- Add Folder Modal -->
-  <div id="add-folder-modal" class="modal">
+  <!-- Confirm Open & Delete Modal -->
+  <div id="confirm-open-modal" class="modal">
     <div class="modal-content">
-      <h3>Create New Folder</h3>
-      <input type="text" id="new-folder-input" placeholder="Folder name">
+      <h3>Open Link</h3>
+      <p style="color: var(--text-primary); margin: 0 0 24px 0; text-align: center; line-height: 1.5;">
+        Are you sure? The link will be deleted once you open it.
+      </p>
       <div class="modal-actions">
-        <button id="cancel-folder-btn" class="btn-secondary">Cancel</button>
-        <button id="create-folder-btn" class="btn-primary">Create</button>
+        <button id="cancel-open-btn" class="btn-secondary">Cancel</button>
+        <button id="confirm-open-btn" class="btn-primary">Open &amp; Delete</button>
       </div>
     </div>
   </div>
