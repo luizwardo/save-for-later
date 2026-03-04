@@ -1,26 +1,15 @@
 document.addEventListener("DOMContentLoaded", async () => {
   console.log("Popup loading started...");
   
-  // Initialize theme
-  // Theme now automatically follows system preference
-  
   // Get all elements
   const setReminderBtn = document.getElementById("set-reminder");
   const settingsBtn = document.getElementById("settings");
-  const previewTime = document.getElementById("preview-time");
   
   // Folder elements
   const folderSelect = document.getElementById("folder-select");
   const newFolderInput = document.getElementById("new-folder");
   const newFolderBtn = document.getElementById("new-folder-btn");
   const newFolderWrapper = document.getElementById("new-folder-wrapper");
-
-  // DateTime picker elements
-  const reminderDate = document.getElementById('reminder-date');
-  const reminderTime = document.getElementById('reminder-time');
-  const clearDateTimeBtn = document.getElementById('clear-datetime');
-  const reminderToggle = document.getElementById('reminder-toggle');
-  const datetimeContainer = document.getElementById('datetime-container');
   
   // Modal elements
   const successModal = document.getElementById('success-modal');
@@ -28,7 +17,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   const openSettingsBtn = document.getElementById('open-settings-btn');
   const closePopupBtn = document.getElementById('close-popup-btn');
   
-  let selectedDateTime = null;
   let currentTabUrl = '';
   let currentTabTitle = '';
   let currentTabWindowId = null;
@@ -60,13 +48,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     try {
       if (!imageEl || imageEl.style.display === 'none') return;
       
-      // Get natural image dimensions
       const naturalWidth = imageEl.naturalWidth;
       const naturalHeight = imageEl.naturalHeight;
       
       console.log('Image dimensions:', naturalWidth, 'x', naturalHeight);
       
-      // Check for problematic images
       const isVerySmall = naturalWidth < 100 || naturalHeight < 100;
       const hasWeirdAspectRatio = (naturalWidth / naturalHeight) > 3 || (naturalHeight / naturalWidth) > 3;
       const isSquareIcon = Math.abs(naturalWidth - naturalHeight) < 10 && naturalWidth < 200;
@@ -75,15 +61,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       const shouldBeSmall = isVerySmall || hasWeirdAspectRatio || isSquareIcon || isTooNarrow;
       
       if (shouldBeSmall) {
-        console.log('Marking image as small/distorted:', {
-          isVerySmall,
-          hasWeirdAspectRatio,
-          isSquareIcon,
-          isTooNarrow
-        });
         imageEl.classList.add('small-preview');
       } else {
-        console.log('Image appears normal, keeping full size');
         imageEl.classList.remove('small-preview');
       }
     } catch (error) {
@@ -91,13 +70,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // Function to load site preview
   // Safely attempt to capture a preview screenshot of the visible tab
   async function tryCapturePreview(windowId) {
     try {
       if (!chrome?.tabs?.captureVisibleTab) return null;
       const options = { format: 'jpeg', quality: 60 };
-      // windowId is optional; if provided, prefer it
       const dataUrl = await chrome.tabs.captureVisibleTab(windowId ?? undefined, options);
       if (typeof dataUrl === 'string' && dataUrl.startsWith('data:image')) {
         return dataUrl;
@@ -119,10 +96,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     const previewLoading = document.getElementById("preview-loading");
     const { windowId = null, favIconUrl = '' } = tabInfo || {};
 
-    console.log("Elements found:", { siteTitle, siteDomain, siteFavicon, previewImage, previewLoading });
-    console.log("Loading site preview for:", url);
-
-    // Show loading state
     if (previewLoading) {
       previewLoading.style.display = 'block';
     }
@@ -131,9 +104,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     try {
-      // Skip chrome:// URLs and extension URLs
       if (url.startsWith('chrome://') || url.startsWith('chrome-extension://') || url.startsWith('moz-extension://')) {
-        console.log("Skipping chrome/extension URL:", url);
         if (siteTitle) siteTitle.textContent = title || "Browser Page";
         if (siteDomain) siteDomain.textContent = "Internal";
         if (siteFavicon) siteFavicon.style.display = 'none';
@@ -150,7 +121,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       const urlObj = new URL(url);
       const domain = urlObj.hostname;
 
-      // Update preview info
       if (siteTitle) {
         siteTitle.textContent = title || "Untitled";
       }
@@ -158,7 +128,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         siteDomain.textContent = domain;
       }
       
-      // Handle favicon for both small icon and large preview
       const isValidDomain = domain && 
                          domain !== 'localhost' && 
                          !domain.startsWith('127.') && 
@@ -167,21 +136,18 @@ document.addEventListener("DOMContentLoaded", async () => {
                          domain.length > 2;
 
       if (isValidDomain) {
-        // Small favicon icon: prefer Chrome tab.favIconUrl if available, else fallbacks
         if (siteFavicon) {
           const smallFaviconUrl = favIconUrl || `https://www.google.com/s2/favicons?domain=${domain}&sz=16`;
           siteFavicon.src = smallFaviconUrl;
           siteFavicon.style.display = 'block';
 
           siteFavicon.onerror = function() {
-            console.log("Small favicon failed for domain:", domain);
             this.style.display = 'none';
             this.src = '';
             this.onerror = null;
           };
         }
 
-        // Try Chrome API screenshot first, then fallback to favicon providers
         (async () => {
           let shown = false;
           try {
@@ -197,7 +163,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                 checkAndMarkSmallImage(previewImage);
               };
               previewImage.onerror = function() {
-                // If capture fails to load, fallback next
                 shown = false;
                 this.onerror = null;
               };
@@ -210,7 +175,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
           if (shown) return;
 
-          // Fallback: large favicon
           if (previewImage) {
             const largeFaviconUrl = favIconUrl || `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
 
@@ -221,7 +185,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             };
 
             previewImage.onerror = function() {
-              console.log("Large/favicon URL failed, trying alternative for domain:", domain);
               const altFaviconUrl = `https://icon.horse/icon/${domain}`;
 
               previewImage.onload = function() {
@@ -231,7 +194,6 @@ document.addEventListener("DOMContentLoaded", async () => {
               };
 
               previewImage.onerror = function() {
-                console.log("All favicon sources failed for domain:", domain);
                 if (previewLoading) previewLoading.style.display = 'none';
                 previewImage.style.display = 'none';
               };
@@ -243,7 +205,6 @@ document.addEventListener("DOMContentLoaded", async () => {
           }
         })();
       } else {
-        console.log("Invalid domain for favicon:", domain);
         if (siteFavicon) {
           siteFavicon.style.display = 'none';
           siteFavicon.src = '';
@@ -276,106 +237,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
     
     console.log("loadSitePreview completed");
-  }
-
-  // Function to update preview time
-  function updatePreview() {
-    if (!selectedDateTime) {
-      if (previewTime) previewTime.textContent = "No reminder set - will save immediately";
-      updateButtonText();
-      return;
-    }
-
-    if (previewTime) {
-      previewTime.textContent = selectedDateTime.toLocaleDateString() + " at " + 
-        selectedDateTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    }
-    updateButtonText();
-  }
-
-  // Function to update button text based on selection
-  function updateButtonText() {
-    if (setReminderBtn) {
-      if (!selectedDateTime) {
-        setReminderBtn.textContent = "SAVE";
-      } else {
-        setReminderBtn.textContent = "Save with Reminder";
-      }
-    }
-  }
-
-  // Initialize datetime picker
-  function initDateTimePicker() {
-    if (!reminderDate || !reminderTime || !clearDateTimeBtn) {
-      console.error("DateTime picker elements not found");
-      return;
-    }
-
-    // Set minimum date to today
-    const today = new Date();
-    const todayString = today.toISOString().split('T')[0];
-    reminderDate.min = todayString;
-
-    // Event listeners for date and time inputs
-    function updateSelectedDateTime() {
-      const dateValue = reminderDate.value;
-      const timeValue = reminderTime.value;
-      
-      if (dateValue && timeValue) {
-        const combinedDateTime = new Date(`${dateValue}T${timeValue}`);
-        const now = new Date();
-        
-        // Check if selected time is in the past
-        if (combinedDateTime <= now) {
-          showError("Please select a future date and time");
-          selectedDateTime = null;
-        } else {
-          selectedDateTime = combinedDateTime;
-        }
-      } else {
-        selectedDateTime = null;
-      }
-      
-      updatePreview();
-    }
-
-    reminderDate.addEventListener('change', updateSelectedDateTime);
-    reminderTime.addEventListener('change', updateSelectedDateTime);
-
-    // Clear button functionality
-    clearDateTimeBtn.addEventListener('click', () => {
-      reminderDate.value = '';
-      reminderTime.value = '';
-      selectedDateTime = null;
-      updatePreview();
-    });
-
-    // Reminder toggle functionality
-    reminderToggle.addEventListener('click', () => {
-      const isExpanded = reminderToggle.classList.contains('expanded');
-      
-      if (isExpanded) {
-        // Collapse
-        reminderToggle.classList.remove('expanded');
-        datetimeContainer.classList.add('hidden');
-      } else {
-        // Expand
-        reminderToggle.classList.add('expanded');
-        datetimeContainer.classList.remove('hidden');
-      }
-    });
-
-    // Set default time if date is selected but time is not
-    reminderDate.addEventListener('change', () => {
-      if (reminderDate.value && !reminderTime.value) {
-        // Set default time to current time + 1 hour
-        const now = new Date();
-        now.setHours(now.getHours() + 1);
-        const timeString = now.toTimeString().slice(0, 5);
-        reminderTime.value = timeString;
-        updateSelectedDateTime();
-      }
-    });
   }
 
   // Load folders
@@ -435,7 +296,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Handle new folder functionality
   if (newFolderBtn && newFolderInput && newFolderWrapper) {
-    // Function to handle floating label
     function updateFloatingLabel() {
       if (newFolderInput.value.trim() !== '' || document.activeElement === newFolderInput) {
         newFolderWrapper.classList.add('active');
@@ -502,23 +362,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
 
       try {
-        if (selectedDateTime) {
-          // Save with reminder
-          await saveReminderWithDateTime(url, customTitle, selectedDateTime, selectedFolderId);
-          
-          const dateText = selectedDateTime.toLocaleDateString();
-          const timeText = selectedDateTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-          
-          if (successMessage) {
-            successMessage.textContent = `You'll be reminded on ${dateText} at ${timeText}`;
-          }
-        } else {
-          // Save without reminder
-          await saveLinkWithoutReminder(url, customTitle, selectedFolderId);
-          
-          if (successMessage) {
-            successMessage.textContent = "";
-          }
+        await saveLink(url, customTitle, selectedFolderId);
+        
+        if (successMessage) {
+          successMessage.textContent = "Link saved successfully.";
         }
         
         if (successModal) {
@@ -557,30 +404,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  // Initialize everything
+  // Initialize
   await loadFolders();
   console.log("Folders loaded");
-  
-  initDateTimePicker();
-  console.log("Time picker initialized");
-  
-  updatePreview();
-  console.log("Preview updated");
-
   console.log("Popup initialized successfully");
 });
 
 // Theme detection and icon update
 function updateThemeIcon() {
   try {
-    console.log("updateThemeIcon called");
     const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
     const iconPath = prefersDark ? 'assets/sfl-dark.png' : 'assets/sfl-light.png';
-
-    console.log("Theme detected - Dark mode:", prefersDark);
-    console.log("Icon path selected:", iconPath);
     
-    // Send message to background script to update icon
     chrome.runtime.sendMessage({
       action: "setIcon",
       iconPath: iconPath,
@@ -601,50 +436,25 @@ if (window.matchMedia) {
   mediaQuery.addListener(updateThemeIcon);
 }
 
-// Save with reminder
-async function saveReminder(url, customTitle, hours, minutes, folderId = null) {
-  let title = customTitle;
-  if (!title) {
-    try {
-      const [tab] = await chrome.tabs.query({
-        active: true,
-        currentWindow: true,
-      });
-      title = tab ? tab.title : "Saved Link";
-    } catch (error) {
-      title = "Saved Link";
+// Capture tab screenshot as data URL for storage
+async function captureScreenshotForStorage() {
+  try {
+    if (!chrome?.tabs?.captureVisibleTab) return null;
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab) return null;
+    const dataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, { format: 'jpeg', quality: 50 });
+    if (typeof dataUrl === 'string' && dataUrl.startsWith('data:image')) {
+      return dataUrl;
     }
+    return null;
+  } catch (e) {
+    console.warn('Screenshot capture for storage failed:', e);
+    return null;
   }
-
-  const now = new Date();
-  const delayInMs = (hours * 60 + minutes) * 60 * 1000;
-  const reminderDate = new Date(now.getTime() + delayInMs);
-
-  const reminder = {
-    id: Date.now().toString(),
-    url: url,
-    title: title,
-    reminderDate: reminderDate.toISOString(),
-    createdAt: new Date().toISOString(),
-    delayHours: hours,
-    delayMinutes: minutes,
-    folderId: folderId || null
-  };
-
-  const result = await chrome.storage.local.get(["reminders"]);
-  const reminders = result.reminders || [];
-  reminders.push(reminder);
-  await chrome.storage.local.set({ reminders });
-
-  await chrome.alarms.create(reminder.id, {
-    when: reminderDate.getTime(),
-  });
-
-  console.log("Reminder saved:", reminder);
 }
 
-// Save with specific datetime
-async function saveReminderWithDateTime(url, customTitle, reminderDateTime, folderId = null) {
+// Save link (no reminder)
+async function saveLink(url, customTitle, folderId = null) {
   let title = customTitle;
   if (!title) {
     try {
@@ -658,56 +468,24 @@ async function saveReminderWithDateTime(url, customTitle, reminderDateTime, fold
     }
   }
 
-  const reminder = {
-    id: Date.now().toString(),
-    url: url,
-    title: title,
-    reminderDate: reminderDateTime.toISOString(),
-    createdAt: new Date().toISOString(),
-    folderId: folderId || null
-  };
-
-  const result = await chrome.storage.local.get(["reminders"]);
-  const reminders = result.reminders || [];
-  reminders.push(reminder);
-  await chrome.storage.local.set({ reminders });
-
-  await chrome.alarms.create(reminder.id, {
-    when: reminderDateTime.getTime(),
-  });
-
-  console.log("Reminder saved with specific datetime:", reminder);
-}
-
-// Save without reminder
-async function saveLinkWithoutReminder(url, customTitle, folderId = null) {
-  let title = customTitle;
-  if (!title) {
-    try {
-      const [tab] = await chrome.tabs.query({
-        active: true,
-        currentWindow: true,
-      });
-      title = tab ? tab.title : "Saved Link";
-    } catch (error) {
-      title = "Saved Link";
-    }
-  }
+  // Capture screenshot of the current tab
+  const previewDataUrl = await captureScreenshotForStorage();
 
   const linkData = {
     id: Date.now().toString(),
     url: url,
     title: title,
     createdAt: new Date().toISOString(),
-    folderId: folderId || null
+    folderId: folderId || null,
+    previewDataUrl: previewDataUrl || null
   };
 
-  const result = await chrome.storage.local.get(["reminders"]);
-  const reminders = result.reminders || [];
-  reminders.push(linkData);
-  await chrome.storage.local.set({ reminders });
+  const result = await chrome.storage.local.get(["savedLinks"]);
+  const savedLinks = result.savedLinks || [];
+  savedLinks.push(linkData);
+  await chrome.storage.local.set({ savedLinks });
 
-  console.log("Link saved without reminder:", linkData);
+  console.log("Link saved:", linkData.id);
 }
 
 // Notification functions
@@ -766,7 +544,5 @@ style.textContent = `
   }
 `;
 document.head.appendChild(style);
-
-// Theme functions removed - now using system preference detection
 
 console.log("Popup script loaded successfully");
