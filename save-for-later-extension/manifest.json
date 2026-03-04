@@ -5,11 +5,9 @@
   "description": "For the forgetful ones who always save videos to watch later... and never do. I got your back! Save links and set reminders to check them out later.",
   "permissions": [
     "storage",
-    "alarms",
     "activeTab",
     "tabs",
-    "scripting",
-    "notifications"
+    "scripting"
   ],
   "host_permissions": [
     "<all_urls>"
